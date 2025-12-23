@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import logoJBM from '@/assets/logo-jbm.png';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -32,14 +33,12 @@ const Header = () => {
     >
       <div className="container mx-auto px-4 flex items-center justify-between">
         {/* Logo */}
-        <a href="#" className="flex items-center gap-3 group">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-lime-500 to-lime-600 flex items-center justify-center shadow-soft group-hover:shadow-glow transition-all duration-300">
-            <span className="font-display text-xl font-bold text-primary-foreground">JBM</span>
-          </div>
-          <div className="hidden sm:block">
-            <span className="font-display text-lg font-semibold text-foreground">Cítricos</span>
-            <span className="block text-xs text-lime-600 font-medium tracking-wider uppercase">Premium</span>
-          </div>
+        <a href="#" className="flex items-center group">
+          <img 
+            src={logoJBM} 
+            alt="JBM Cítricos Premium" 
+            className="h-14 sm:h-16 w-auto transition-transform duration-300 group-hover:scale-105"
+          />
         </a>
 
         {/* Desktop Navigation */}
