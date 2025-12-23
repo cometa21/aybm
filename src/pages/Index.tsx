@@ -5,6 +5,7 @@ import ProductSection from '@/components/ProductSection';
 import ClassificationsSection from '@/components/ClassificationsSection';
 import NutritionSection from '@/components/NutritionSection';
 import LogisticsSection from '@/components/LogisticsSection';
+import CertificationsSection from '@/components/CertificationsSection';
 import WhyJBMSection from '@/components/WhyJBMSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
@@ -55,6 +56,7 @@ const Index = () => {
           <ClassificationsSection />
           <NutritionSection />
           <LogisticsSection />
+          <CertificationsSection />
           <WhyJBMSection />
           <ContactSection />
         </main>
