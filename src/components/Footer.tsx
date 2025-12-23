@@ -7,15 +7,15 @@ const Footer = () => {
     <footer className="bg-lime-900 text-lime-100 py-16">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-4 gap-12 mb-12">
-          <img 
-                      src={logoJBM} 
-                      alt="JBM Cítricos Premium" 
-                      className="h-14 sm:h-16 w-auto transition-transform duration-300 group-hover:scale-105"
-                    />
+          {/* Brand */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-lime-500 to-lime-600 flex items-center justify-center">
-                <span className="font-display text-xl font-bold text-primary-foreground">JBM</span>
+                <img 
+                            src={logoJBM} 
+                            alt="JBM Cítricos Premium" 
+                            className="h-14 sm:h-16 w-auto transition-transform duration-300 group-hover:scale-105"
+                          />
               </div>
               <div>
                 <span className="font-display text-lg font-semibold text-primary-foreground">Cítricos</span>
