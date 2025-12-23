@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        display: ['"Playfair Display"', 'serif'],
+        sans: ['Inter', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -47,6 +51,30 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        lime: {
+          50: "hsl(var(--lime-50))",
+          100: "hsl(var(--lime-100))",
+          200: "hsl(var(--lime-200))",
+          300: "hsl(var(--lime-300))",
+          400: "hsl(var(--lime-400))",
+          500: "hsl(var(--lime-500))",
+          600: "hsl(var(--lime-600))",
+          700: "hsl(var(--lime-700))",
+          800: "hsl(var(--lime-800))",
+          900: "hsl(var(--lime-900))",
+        },
+        citrus: {
+          50: "hsl(var(--citrus-50))",
+          100: "hsl(var(--citrus-100))",
+          200: "hsl(var(--citrus-200))",
+          300: "hsl(var(--citrus-300))",
+          400: "hsl(var(--citrus-400))",
+          500: "hsl(var(--citrus-500))",
+        },
+        gold: {
+          400: "hsl(var(--gold-400))",
+          500: "hsl(var(--gold-500))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -65,20 +93,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
