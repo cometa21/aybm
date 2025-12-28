@@ -1,5 +1,6 @@
-import { Droplets, Sparkles, CircleDot } from 'lucide-react';
+import { Droplets, Sparkles, CircleDot, FileDown } from 'lucide-react';
 import limeSingle from '@/assets/lime-single.png';
+import { Button } from '@/components/ui/button';
 
 const ProductSection = () => {
   const features = [
@@ -89,6 +90,20 @@ const ProductSection = () => {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Download Button */}
+            <div className="mt-10">
+              <Button
+                asChild
+                variant="outline"
+                className="gap-2 border-lime-600 text-lime-700 hover:bg-lime-50"
+              >
+                <a href="/docs/ficha-tecnica-jbm.pdf" download="Ficha_Tecnica_JBM_Citricos.pdf">
+                  <FileDown className="w-5 h-5" />
+                  Descargar Ficha Técnica
+                </a>
+              </Button>
             </div>
           </div>
         </div>
