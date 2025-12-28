@@ -5,6 +5,7 @@ import ProductSection from '@/components/ProductSection';
 import ClassificationsSection from '@/components/ClassificationsSection';
 import NutritionSection from '@/components/NutritionSection';
 import LogisticsSection from '@/components/LogisticsSection';
+import GallerySection from '@/components/GallerySection';
 import CertificationsSection from '@/components/CertificationsSection';
 import WhyJBMSection from '@/components/WhyJBMSection';
 import ContactSection from '@/components/ContactSection';
@@ -56,6 +57,7 @@ const Index = () => {
           <ClassificationsSection />
           <NutritionSection />
           <LogisticsSection />
+          <GallerySection />
           <CertificationsSection />
           <WhyJBMSection />
           <ContactSection />
