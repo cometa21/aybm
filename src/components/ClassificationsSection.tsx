@@ -37,11 +37,11 @@ interface CalibreData {
 }
 
 const ClassificationsSection = () => {
-  const [selectedCalibre, setSelectedCalibre] = useState<string>('No. 4 / 400');
+  const [selectedCalibre, setSelectedCalibre] = useState<string>('200 (Extra Jumbo)');
 
   const calibres: CalibreData[] = [
     {
-      calibre: 'No. 1 / 200',
+      calibre: '200 (Extra Jumbo)',
       size: '200',
       clasificacion: 'Extra Jumbo',
       diametro: '> 44.0 mm',
@@ -51,7 +51,7 @@ const ClassificationsSection = () => {
       diameterMm: 46,
     },
     {
-      calibre: 'No. 5 / 300',
+      calibre: '300 (Extras)',
       size: '300',
       clasificacion: 'Extras',
       diametro: '> 38.1 mm',
@@ -61,7 +61,7 @@ const ClassificationsSection = () => {
       diameterMm: 40,
     },
     {
-      calibre: 'No. 4 / 400',
+      calibre: '400',
       size: '400',
       clasificacion: 'Primera',
       diametro: '37.1 - 39.0 mm',
@@ -71,7 +71,7 @@ const ClassificationsSection = () => {
       diameterMm: 38,
     },
     {
-      calibre: 'No. 3 / 500',
+      calibre: '500',
       size: '500',
       clasificacion: 'Primera',
       diametro: '35.1 - 37.0 mm',
@@ -81,7 +81,7 @@ const ClassificationsSection = () => {
       diameterMm: 36,
     },
     {
-      calibre: 'No. 2 / 600',
+      calibre: '600',
       size: '600',
       clasificacion: 'Primera',
       diametro: '32.0 - 35.0 mm',
@@ -199,16 +199,29 @@ const ClassificationsSection = () => {
             </div>
           </div>
 
-          {/* Right - Map */}
+          {/* Right - Map with fade effect */}
           <div className="relative flex items-center justify-center">
             <div className="relative w-full max-w-sm">
               <div className="absolute inset-0 bg-lime-400/20 rounded-full blur-3xl scale-75" />
-              <img 
-                src={michoacanMap} 
-                alt="Mapa de Michoacán - Zona de origen del limón mexicano JBM"
-                className="relative z-10 w-full h-auto drop-shadow-lg"
-              />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+              {/* Map with fade edges */}
+              <div className="relative z-10">
+                <div 
+                  className="absolute inset-0 pointer-events-none z-20"
+                  style={{
+                    background: 'radial-gradient(ellipse at center, transparent 40%, hsl(var(--background)) 85%)',
+                  }}
+                />
+                <img 
+                  src={michoacanMap} 
+                  alt="Mapa de Michoacán - Zona de origen del limón mexicano JBM"
+                  className="w-full h-auto"
+                  style={{
+                    maskImage: 'radial-gradient(ellipse at center, black 50%, transparent 80%)',
+                    WebkitMaskImage: 'radial-gradient(ellipse at center, black 50%, transparent 80%)',
+                  }}
+                />
+              </div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
                 <div className="relative">
                   <div className="absolute inset-0 bg-lime-500 rounded-full animate-ping opacity-20" />
                   <div className="w-4 h-4 bg-lime-600 rounded-full border-2 border-white shadow-lg" />
