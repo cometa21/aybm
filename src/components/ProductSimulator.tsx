@@ -94,11 +94,21 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
     }
   };
 
-  // Generate ruler marks
+  // Generate ruler marks - more precise
   const rulerMarks = [];
   for (let i = 0; i <= 50; i += 5) {
     rulerMarks.push(i);
   }
+
+  // WhatsApp message with selected calibre
+  const whatsappMessage = encodeURIComponent(
+    `Hola JBM Cítricos, me interesa una cotización de Limón Mexicano. Vi el Calibre ${currentCalibre.size} en su sitio web y me gustaría más información.`
+  );
+  const whatsappUrl = `https://wa.me/524531234567?text=${whatsappMessage}`;
+
+  // Calculate visual size based on calibre (base 180px for calibre 200)
+  const baseSizePx = 180;
+  const visualSize = baseSizePx * currentCalibre.scale;
 
   return (
     <div className="relative">
@@ -120,56 +130,58 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
         </div>
 
         {/* Main Visualizer Area */}
-        <div className="relative aspect-square max-w-[320px] mx-auto mb-6">
-          {/* Background Glow */}
+        <div className="relative h-[320px] max-w-[320px] mx-auto mb-6">
+          {/* Background Glow - follows lime size */}
           <div 
-            className={`absolute inset-0 rounded-full blur-3xl opacity-30 transition-all duration-500 bg-gradient-to-br ${maturityInfo.bgGradient}`}
-            style={{ transform: `scale(${currentCalibre.scale})` }}
+            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl opacity-30 transition-all duration-500 ease-out bg-gradient-to-br ${maturityInfo.bgGradient}`}
+            style={{ 
+              width: `${visualSize * 1.5}px`,
+              height: `${visualSize * 1.5}px`,
+            }}
           />
 
-          {/* Ruler - Left Side */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-[80%] w-8 flex flex-col justify-between items-end pr-1">
-            <div className="absolute inset-y-0 right-0 w-[2px] bg-gradient-to-b from-lime-300 via-lime-500 to-lime-300" />
+          {/* Permanent Millimeter Ruler - Left Side */}
+          <div className="absolute left-2 top-1/2 -translate-y-1/2 h-[240px] flex flex-col justify-between items-end z-10">
+            <div className="absolute inset-y-0 right-0 w-[2px] bg-gradient-to-b from-lime-300 via-lime-500 to-lime-300 rounded-full" />
             {rulerMarks.map((mark) => (
-              <div key={mark} className="relative flex items-center">
-                <span className="text-[8px] text-muted-foreground mr-1">{mark}</span>
-                <div className={`h-[1px] ${mark % 10 === 0 ? 'w-3 bg-lime-600' : 'w-2 bg-lime-400'}`} />
+              <div key={mark} className="relative flex items-center -mr-[2px]">
+                <span className="text-[9px] font-mono text-lime-700 mr-1 font-medium">{mark}</span>
+                <div className={`h-[1.5px] rounded ${mark % 10 === 0 ? 'w-4 bg-lime-700' : 'w-2 bg-lime-500'}`} />
               </div>
             ))}
+            <span className="text-[8px] text-muted-foreground mt-1">mm</span>
           </div>
 
-          {/* Hand Silhouette Reference */}
-          <div className="absolute right-0 bottom-0 w-20 h-32 opacity-10">
+          {/* Permanent Hand Silhouette Reference - Always visible */}
+          <div className="absolute right-2 bottom-2 w-16 h-24 opacity-20 z-10">
             <Hand className="w-full h-full text-foreground" />
+            <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] text-muted-foreground whitespace-nowrap">Escala ref.</span>
           </div>
 
-          {/* Lime Image with Dynamic Scaling */}
-          <div 
-            className="absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out"
-            style={{ 
-              transform: `scale(${currentCalibre.scale})`,
-            }}
-          >
+          {/* Lime Image with REAL Dynamic Sizing (width/height change) */}
+          <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative">
               <img 
                 src={limeSingle}
                 alt={`Limón calibre ${currentCalibre.size}`}
-                className="w-48 h-48 object-contain drop-shadow-2xl transition-all duration-300"
+                className="object-contain drop-shadow-2xl transition-all duration-300 ease-out"
                 style={{ 
+                  width: `${visualSize}px`,
+                  height: `${visualSize}px`,
                   filter: maturityInfo.hueRotate,
                 }}
               />
               
-              {/* Dynamic Info Badge */}
-              <div className="absolute -top-2 -right-2 px-3 py-2 rounded-xl bg-card/95 backdrop-blur-sm border border-lime-200 shadow-card">
+              {/* Dynamic Info Badge - Diameter */}
+              <div className="absolute -top-4 -right-4 px-3 py-2 rounded-xl bg-card/95 backdrop-blur-sm border border-lime-200 shadow-card">
                 <div className="text-center">
-                  <span className="block text-xs text-muted-foreground">Diámetro</span>
-                  <span className="block text-lg font-bold text-lime-700">{currentCalibre.diameterMm}mm</span>
+                  <span className="block text-[10px] text-muted-foreground">Diámetro</span>
+                  <span className="block text-xl font-bold text-lime-700">{currentCalibre.diameterMm}mm</span>
                 </div>
               </div>
 
               {/* Pieces per Kg Badge */}
-              <div className="absolute -bottom-2 -left-2 px-3 py-2 rounded-xl bg-lime-600 text-white shadow-card">
+              <div className="absolute -bottom-4 -left-4 px-3 py-2 rounded-xl bg-lime-600 text-white shadow-card">
                 <div className="text-center">
                   <span className="block text-[10px] opacity-80">Piezas/Kg</span>
                   <span className="block text-sm font-bold">{currentCalibre.piezasKg}</span>
@@ -178,9 +190,14 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
             </div>
           </div>
 
-          {/* Use Case Badge */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-gradient-to-r from-lime-500 to-lime-600 text-white text-sm font-medium shadow-soft whitespace-nowrap">
+          {/* Use Case Badge - Top */}
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-gradient-to-r from-lime-500 to-lime-600 text-white text-sm font-medium shadow-soft whitespace-nowrap z-20">
             {currentCalibre.uso.split(' / ')[0]}
+          </div>
+
+          {/* Calibre indicator */}
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-card border border-lime-200 shadow-sm">
+            <span className="text-xs font-medium text-lime-700">Calibre {currentCalibre.size}</span>
           </div>
         </div>
 
@@ -233,7 +250,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <Button
             variant="outline"
             className="gap-2 border-lime-300 text-lime-700 hover:bg-lime-50"
@@ -251,6 +268,19 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
             <span className="text-xs sm:text-sm">Ver en AR</span>
           </Button>
         </div>
+
+        {/* WhatsApp CTA Button */}
+        <Button
+          asChild
+          className="w-full gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white font-medium"
+        >
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            Cotizar Calibre {currentCalibre.size}
+          </a>
+        </Button>
 
         {/* AR Support Notice */}
         {!isARSupported && (
