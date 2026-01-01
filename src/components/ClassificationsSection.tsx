@@ -23,6 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import michoacanMap from '@/assets/michoacan-map.png';
+import ProductSimulator from './ProductSimulator';
 
 interface CalibreData {
   calibre: string;
@@ -31,6 +32,8 @@ interface CalibreData {
   diametro: string;
   piezasKg: string;
   uso: string;
+  scale: number;
+  diameterMm: number;
 }
 
 const ClassificationsSection = () => {
@@ -44,6 +47,8 @@ const ClassificationsSection = () => {
       diametro: '> 44.0 mm',
       piezasKg: '< 22 piezas',
       uso: 'Garnish & Premium Food Service',
+      scale: 1.0,
+      diameterMm: 46,
     },
     {
       calibre: 'No. 5 / 300',
@@ -52,6 +57,8 @@ const ClassificationsSection = () => {
       diametro: '> 38.1 mm',
       piezasKg: '< 26 piezas',
       uso: 'Restaurantes de Alta Gama',
+      scale: 0.9,
+      diameterMm: 40,
     },
     {
       calibre: 'No. 4 / 400',
@@ -60,6 +67,8 @@ const ClassificationsSection = () => {
       diametro: '37.1 - 39.0 mm',
       piezasKg: '24 - 29 piezas',
       uso: 'Retail / Supermercados',
+      scale: 0.8,
+      diameterMm: 38,
     },
     {
       calibre: 'No. 3 / 500',
@@ -68,6 +77,8 @@ const ClassificationsSection = () => {
       diametro: '35.1 - 37.0 mm',
       piezasKg: '30 - 35 piezas',
       uso: 'Consumo General',
+      scale: 0.7,
+      diameterMm: 36,
     },
     {
       calibre: 'No. 2 / 600',
@@ -76,6 +87,8 @@ const ClassificationsSection = () => {
       diametro: '32.0 - 35.0 mm',
       piezasKg: '36 - 41 piezas',
       uso: 'Industria de Jugos',
+      scale: 0.6,
+      diameterMm: 33,
     },
   ];
 
@@ -205,71 +218,92 @@ const ClassificationsSection = () => {
           </div>
         </div>
 
-        {/* Calibres Table */}
-        <div className="mb-16">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-display text-xl lg:text-2xl font-bold text-foreground">
-              Tabla de Calibres
-            </h3>
-            <span className="text-sm text-muted-foreground">
-              Especificaciones USDA
-            </span>
-          </div>
-          
-          <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-lime-50 hover:bg-lime-50">
-                    <TableHead className="font-semibold text-lime-900">Calibre / Size</TableHead>
-                    <TableHead className="font-semibold text-lime-900">Clasificación</TableHead>
-                    <TableHead className="font-semibold text-lime-900">Diámetro (mm)</TableHead>
-                    <TableHead className="font-semibold text-lime-900">Piezas por Kg</TableHead>
-                    <TableHead className="font-semibold text-lime-900">Uso Recomendado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {calibres.map((item) => (
-                    <TableRow 
-                      key={item.calibre}
-                      className={`cursor-pointer transition-colors ${
-                        selectedCalibre === item.calibre 
-                          ? 'bg-lime-50 border-l-4 border-l-lime-500' 
-                          : 'hover:bg-muted/50'
-                      }`}
-                      onClick={() => setSelectedCalibre(item.calibre)}
-                    >
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                            selectedCalibre === item.calibre 
-                              ? 'bg-lime-500 text-white' 
+        {/* Calibres Table + Product Simulator */}
+        <div className="grid lg:grid-cols-[1fr,400px] gap-8 mb-16">
+          {/* Table Section */}
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-display text-xl lg:text-2xl font-bold text-foreground">
+                Tabla de Calibres
+              </h3>
+              <span className="text-sm text-muted-foreground">
+                Especificaciones USDA
+              </span>
+            </div>
+            
+            <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-lime-50 hover:bg-lime-50">
+                      <TableHead className="font-semibold text-lime-900">Calibre / Size</TableHead>
+                      <TableHead className="font-semibold text-lime-900">Clasificación</TableHead>
+                      <TableHead className="font-semibold text-lime-900">Diámetro (mm)</TableHead>
+                      <TableHead className="font-semibold text-lime-900">Piezas por Kg</TableHead>
+                      <TableHead className="font-semibold text-lime-900 hidden xl:table-cell">Uso Recomendado</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {calibres.map((item) => (
+                      <TableRow 
+                        key={item.calibre}
+                        className={`cursor-pointer transition-all duration-300 ${
+                          selectedCalibre === item.calibre 
+                            ? 'bg-lime-50 border-l-4 border-l-lime-500 shadow-sm' 
+                            : 'hover:bg-muted/50'
+                        }`}
+                        onClick={() => setSelectedCalibre(item.calibre)}
+                        onMouseEnter={() => setSelectedCalibre(item.calibre)}
+                      >
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                              selectedCalibre === item.calibre 
+                                ? 'bg-lime-500 text-white scale-110' 
+                                : 'bg-lime-100 text-lime-700'
+                            }`}>
+                              {item.size}
+                            </span>
+                            <span className="hidden sm:inline">{item.calibre}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${
+                            item.clasificacion === 'Extra Jumbo' 
+                              ? 'bg-gold-100 text-gold-700' 
+                              : item.clasificacion === 'Extras'
+                              ? 'bg-citrus-100 text-citrus-700'
                               : 'bg-lime-100 text-lime-700'
                           }`}>
-                            {item.size}
+                            {item.clasificacion}
                           </span>
-                          {item.calibre}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${
-                          item.clasificacion === 'Extra Jumbo' 
-                            ? 'bg-gold-100 text-gold-700' 
-                            : item.clasificacion === 'Extras'
-                            ? 'bg-citrus-100 text-citrus-700'
-                            : 'bg-lime-100 text-lime-700'
-                        }`}>
-                          {item.clasificacion}
-                        </span>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">{item.diametro}</TableCell>
-                      <TableCell className="font-mono text-sm">{item.piezasKg}</TableCell>
-                      <TableCell className="text-muted-foreground">{item.uso}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{item.diametro}</TableCell>
+                        <TableCell className="font-mono text-sm">{item.piezasKg}</TableCell>
+                        <TableCell className="text-muted-foreground hidden xl:table-cell">{item.uso}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
+
+            {/* Mobile: Show selected use */}
+            <div className="xl:hidden mt-4 p-4 rounded-xl bg-lime-50 border border-lime-200">
+              <span className="text-sm text-muted-foreground">Uso recomendado:</span>
+              <p className="font-medium text-foreground mt-1">
+                {calibres.find(c => c.calibre === selectedCalibre)?.uso}
+              </p>
+            </div>
+          </div>
+
+          {/* Product Simulator Panel */}
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <ProductSimulator 
+              selectedCalibre={selectedCalibre}
+              calibres={calibres}
+              onCalibreChange={setSelectedCalibre}
+            />
           </div>
         </div>
 
