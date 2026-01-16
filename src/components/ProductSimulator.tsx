@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Maximize2, 
   Camera, 
   Ruler, 
   Hand,
   Info,
-  Smartphone
+  Smartphone,
+  Move,
+  Download,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import limeSingle from '@/assets/lime-single.png';
@@ -65,9 +68,27 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
   const [showARView, setShowARView] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  
+  // Draggable lime position state
+  const [limePosition, setLimePosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [screenshotTaken, setScreenshotTaken] = useState(false);
+  
+  // Refs for AR elements
+  const arContainerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const limeRef = useRef<HTMLDivElement>(null);
 
   const currentCalibre = calibres.find(c => c.calibre === selectedCalibre) || calibres[0];
   const maturityInfo = maturityData[maturity];
+
+  // Reset lime position when AR view opens
+  useEffect(() => {
+    if (showARView) {
+      setLimePosition({ x: 0, y: 0 });
+    }
+  }, [showARView]);
 
   // Cleanup camera stream on unmount
   useEffect(() => {
@@ -77,6 +98,175 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
       }
     };
   }, [cameraStream]);
+
+  // Handle drag start (mouse and touch)
+  const handleDragStart = useCallback((clientX: number, clientY: number) => {
+    if (!limeRef.current) return;
+    
+    const rect = limeRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: clientX - rect.left - rect.width / 2,
+      y: clientY - rect.top - rect.height / 2
+    });
+    setIsDragging(true);
+  }, []);
+
+  // Handle drag move
+  const handleDragMove = useCallback((clientX: number, clientY: number) => {
+    if (!isDragging || !arContainerRef.current) return;
+    
+    const containerRect = arContainerRef.current.getBoundingClientRect();
+    const newX = clientX - containerRect.left - containerRect.width / 2 - dragOffset.x;
+    const newY = clientY - containerRect.top - containerRect.height / 2 - dragOffset.y;
+    
+    setLimePosition({ x: newX, y: newY });
+  }, [isDragging, dragOffset]);
+
+  // Handle drag end
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // Mouse event handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleDragStart(e.clientX, e.clientY);
+  };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    handleDragMove(e.clientX, e.clientY);
+  }, [handleDragMove]);
+
+  const handleMouseUp = useCallback(() => {
+    handleDragEnd();
+  }, [handleDragEnd]);
+
+  // Touch event handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      handleDragStart(touch.clientX, touch.clientY);
+    }
+  };
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      handleDragMove(touch.clientX, touch.clientY);
+    }
+  }, [handleDragMove]);
+
+  const handleTouchEnd = useCallback(() => {
+    handleDragEnd();
+  }, [handleDragEnd]);
+
+  // Add/remove global event listeners for dragging
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
+      window.addEventListener('touchend', handleTouchEnd);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+
+  // Screenshot function
+  const captureScreenshot = async () => {
+    if (!arContainerRef.current) return;
+
+    try {
+      // Create a canvas to composite video + lime
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const containerRect = arContainerRef.current.getBoundingClientRect();
+      canvas.width = containerRect.width;
+      canvas.height = containerRect.height;
+
+      // Draw video frame if available
+      if (videoRef.current && cameraStream) {
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      } else {
+        // Draw fallback gradient background
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, '#1a1a2e');
+        gradient.addColorStop(1, '#16213e');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // Draw lime image
+      const limeImg = new Image();
+      limeImg.crossOrigin = 'anonymous';
+      
+      await new Promise<void>((resolve, reject) => {
+        limeImg.onload = () => resolve();
+        limeImg.onerror = reject;
+        limeImg.src = limeSingle;
+      });
+
+      const limeSize = Math.max(currentCalibre.diameterMm * 2.5, 100);
+      const limeCenterX = canvas.width / 2 + limePosition.x;
+      const limeCenterY = canvas.height / 2 + limePosition.y;
+      
+      ctx.save();
+      
+      // Apply hue rotation filter effect (approximation)
+      if (maturity === 'alimonado') {
+        ctx.filter = 'hue-rotate(25deg) saturate(1.2)';
+      } else if (maturity === 'amarillo') {
+        ctx.filter = 'hue-rotate(45deg) saturate(1.3)';
+      }
+      
+      ctx.drawImage(
+        limeImg, 
+        limeCenterX - limeSize / 2, 
+        limeCenterY - limeSize / 2, 
+        limeSize, 
+        limeSize
+      );
+      ctx.restore();
+
+      // Add text overlay
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.font = 'bold 16px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        `JBM Cítricos • Calibre ${currentCalibre.size} • ${currentCalibre.diameterMm}mm`,
+        canvas.width / 2,
+        canvas.height - 80
+      );
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `JBM-Limon-Calibre-${currentCalibre.size}-AR.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        // Show success feedback
+        setScreenshotTaken(true);
+        setTimeout(() => setScreenshotTaken(false), 2000);
+      }, 'image/png', 0.95);
+
+    } catch (error) {
+      console.error('Screenshot error:', error);
+    }
+  };
 
   const handleARView = async () => {
     setCameraError(null);
@@ -118,6 +308,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
     }
     setShowARView(false);
     setCameraError(null);
+    setLimePosition({ x: 0, y: 0 });
   };
 
   // Generate ruler marks - more precise
@@ -371,7 +562,10 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
 
       {/* AR View Modal with Camera */}
       {showARView && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col">
+        <div 
+          ref={arContainerRef}
+          className="fixed inset-0 z-50 bg-black flex flex-col touch-none"
+        >
           {/* Camera Feed */}
           {cameraStream && !cameraError ? (
             <video
@@ -381,6 +575,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
               ref={(video) => {
                 if (video && cameraStream) {
                   video.srcObject = cameraStream;
+                  videoRef.current = video;
                 }
               }}
               className="absolute inset-0 w-full h-full object-cover"
@@ -400,36 +595,62 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
           {/* AR Overlay - Draggable Lime */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div 
-              className="relative pointer-events-auto cursor-move select-none animate-pulse"
+              ref={limeRef}
+              className={`relative pointer-events-auto select-none transition-transform ${
+                isDragging ? 'scale-110 cursor-grabbing' : 'cursor-grab'
+              }`}
               style={{ 
-                width: `${currentCalibre.diameterMm * 2.5}px`, 
-                height: `${currentCalibre.diameterMm * 2.5}px`,
-                minWidth: '100px',
-                minHeight: '100px'
+                width: `${Math.max(currentCalibre.diameterMm * 2.5, 100)}px`, 
+                height: `${Math.max(currentCalibre.diameterMm * 2.5, 100)}px`,
+                transform: `translate(${limePosition.x}px, ${limePosition.y}px)`,
               }}
+              onMouseDown={handleMouseDown}
+              onTouchStart={handleTouchStart}
               draggable={false}
             >
               <img 
                 src={limeSingle}
                 alt={`Limón calibre ${currentCalibre.size}`}
-                className="w-full h-full object-contain drop-shadow-2xl"
+                className={`w-full h-full object-contain transition-all duration-200 ${
+                  isDragging ? 'drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]' : 'drop-shadow-2xl'
+                }`}
                 style={{ filter: `${maturityInfo.hueRotate} drop-shadow(0 10px 30px rgba(0,0,0,0.5))` }}
                 draggable={false}
               />
               
               {/* AR Info Badge */}
-              <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/90 backdrop-blur-sm shadow-lg">
+              <div className={`absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/90 backdrop-blur-sm shadow-lg transition-opacity ${
+                isDragging ? 'opacity-50' : 'opacity-100'
+              }`}>
                 <span className="text-sm font-bold text-lime-700">
                   Calibre {currentCalibre.size} • {currentCalibre.diameterMm}mm
                 </span>
               </div>
+
+              {/* Drag indicator */}
+              {!isDragging && (
+                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-1 text-white/60">
+                  <Move className="w-4 h-4" />
+                  <span className="text-xs">Arrastra</span>
+                </div>
+              )}
             </div>
           </div>
 
+          {/* Screenshot Success Overlay */}
+          {screenshotTaken && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-20 animate-fade-in">
+              <div className="bg-lime-500 text-white px-6 py-4 rounded-2xl flex items-center gap-3 shadow-2xl">
+                <Check className="w-6 h-6" />
+                <span className="font-medium">¡Captura guardada!</span>
+              </div>
+            </div>
+          )}
+
           {/* AR Controls */}
-          <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+          <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
             {/* Calibre Selection */}
-            <div className="flex gap-2 justify-center mb-4 flex-wrap">
+            <div className="flex gap-2 justify-center mb-3 flex-wrap">
               {calibres.map((calibre) => (
                 <button
                   key={calibre.calibre}
@@ -462,18 +683,30 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
               ))}
             </div>
 
-            <Button 
-              className="w-full bg-white text-black hover:bg-gray-100"
-              onClick={closeARView}
-            >
-              Cerrar Vista AR
-            </Button>
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                className="bg-lime-500 hover:bg-lime-600 text-white gap-2"
+                onClick={captureScreenshot}
+                disabled={screenshotTaken}
+              >
+                <Download className="w-4 h-4" />
+                <span className="text-sm">Capturar</span>
+              </Button>
+              <Button 
+                className="bg-white text-black hover:bg-gray-100"
+                onClick={closeARView}
+              >
+                Cerrar AR
+              </Button>
+            </div>
           </div>
 
           {/* Instructions */}
           <div className="absolute top-4 inset-x-4 text-center">
-            <p className="text-white/80 text-sm bg-black/50 rounded-full px-4 py-2 inline-block backdrop-blur-sm">
-              {cameraStream ? 'Mueve tu dispositivo para ver el limón sobre superficies' : 'Proyección AR del limón'}
+            <p className="text-white/90 text-sm bg-black/60 rounded-full px-4 py-2 inline-flex items-center gap-2 backdrop-blur-sm">
+              <Move className="w-4 h-4" />
+              {isDragging ? 'Suelta para posicionar' : 'Toca y arrastra el limón para moverlo'}
             </p>
           </div>
         </div>
