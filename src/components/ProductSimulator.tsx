@@ -62,36 +62,62 @@ const maturityData: Record<MaturityLevel, {
 const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: ProductSimulatorProps) => {
   const [maturity, setMaturity] = useState<MaturityLevel>('verde');
   const [showRealSize, setShowRealSize] = useState(false);
-  const [isARSupported, setIsARSupported] = useState(false);
+  const [showARView, setShowARView] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   const currentCalibre = calibres.find(c => c.calibre === selectedCalibre) || calibres[0];
   const maturityInfo = maturityData[maturity];
 
+  // Cleanup camera stream on unmount
   useEffect(() => {
-    // Check if AR is potentially supported (WebXR)
-    if ('xr' in navigator) {
-      (navigator as any).xr?.isSessionSupported?.('immersive-ar').then((supported: boolean) => {
-        setIsARSupported(supported);
-      }).catch(() => setIsARSupported(false));
-    }
-  }, []);
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
 
   const handleARView = async () => {
-    if ('xr' in navigator) {
-      try {
-        const session = await (navigator as any).xr.requestSession('immersive-ar', {
-          requiredFeatures: ['hit-test', 'dom-overlay'],
-          domOverlay: { root: document.body }
-        });
-        // AR session handling would go here
-        console.log('AR session started', session);
-      } catch (error) {
-        // Fallback: open camera overlay simulation
-        alert('AR no disponible. Usa la función "Tamaño Real" para ver el limón a escala.');
-      }
-    } else {
-      alert('Tu navegador no soporta Realidad Aumentada. Prueba con Chrome en Android.');
+    setCameraError(null);
+    
+    // Check if camera is available
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCameraError('Tu navegador no soporta acceso a la cámara. Prueba con Chrome o Safari.');
+      setShowARView(true);
+      return;
     }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: 'environment', // Use back camera
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+      setCameraStream(stream);
+      setShowARView(true);
+    } catch (error: any) {
+      console.error('Camera error:', error);
+      if (error.name === 'NotAllowedError') {
+        setCameraError('Permiso de cámara denegado. Por favor, permite el acceso a la cámara en tu navegador.');
+      } else if (error.name === 'NotFoundError') {
+        setCameraError('No se encontró una cámara en tu dispositivo.');
+      } else {
+        setCameraError('Error al acceder a la cámara. Intenta de nuevo.');
+      }
+      setShowARView(true);
+    }
+  };
+
+  const closeARView = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowARView(false);
+    setCameraError(null);
   };
 
   // Generate ruler marks - more precise
@@ -283,12 +309,10 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
         </Button>
 
         {/* AR Support Notice */}
-        {!isARSupported && (
-          <p className="text-[10px] text-muted-foreground text-center mt-3">
-            <Smartphone className="w-3 h-3 inline mr-1" />
-            AR disponible en dispositivos compatibles con WebXR
-          </p>
-        )}
+        <p className="text-[10px] text-muted-foreground text-center mt-3">
+          <Smartphone className="w-3 h-3 inline mr-1" />
+          Usa AR para proyectar el limón sobre cualquier superficie
+        </p>
       </div>
 
       {/* Real Size Modal */}
@@ -341,6 +365,116 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
             >
               Cerrar
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* AR View Modal with Camera */}
+      {showARView && (
+        <div className="fixed inset-0 z-50 bg-black flex flex-col">
+          {/* Camera Feed */}
+          {cameraStream && !cameraError ? (
+            <video
+              autoPlay
+              playsInline
+              muted
+              ref={(video) => {
+                if (video && cameraStream) {
+                  video.srcObject = cameraStream;
+                }
+              }}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
+              <div className="text-center p-6">
+                <Camera className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                <p className="text-white text-lg mb-2">Vista AR Simulada</p>
+                <p className="text-gray-400 text-sm max-w-xs">
+                  {cameraError || 'Imagina el limón proyectado sobre tu superficie'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* AR Overlay - Draggable Lime */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div 
+              className="relative pointer-events-auto cursor-move select-none animate-pulse"
+              style={{ 
+                width: `${currentCalibre.diameterMm * 2.5}px`, 
+                height: `${currentCalibre.diameterMm * 2.5}px`,
+                minWidth: '100px',
+                minHeight: '100px'
+              }}
+              draggable={false}
+            >
+              <img 
+                src={limeSingle}
+                alt={`Limón calibre ${currentCalibre.size}`}
+                className="w-full h-full object-contain drop-shadow-2xl"
+                style={{ filter: `${maturityInfo.hueRotate} drop-shadow(0 10px 30px rgba(0,0,0,0.5))` }}
+                draggable={false}
+              />
+              
+              {/* AR Info Badge */}
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/90 backdrop-blur-sm shadow-lg">
+                <span className="text-sm font-bold text-lime-700">
+                  Calibre {currentCalibre.size} • {currentCalibre.diameterMm}mm
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* AR Controls */}
+          <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+            {/* Calibre Selection */}
+            <div className="flex gap-2 justify-center mb-4 flex-wrap">
+              {calibres.map((calibre) => (
+                <button
+                  key={calibre.calibre}
+                  onClick={() => onCalibreChange(calibre.calibre)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    selectedCalibre === calibre.calibre
+                      ? 'bg-lime-500 text-white'
+                      : 'bg-white/20 text-white hover:bg-white/30'
+                  }`}
+                >
+                  {calibre.size}
+                </button>
+              ))}
+            </div>
+
+            {/* Maturity Selection */}
+            <div className="flex gap-2 justify-center mb-4">
+              {(Object.keys(maturityData) as MaturityLevel[]).map((level) => (
+                <button
+                  key={level}
+                  onClick={() => setMaturity(level)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    maturity === level
+                      ? `bg-gradient-to-r ${maturityData[level].bgGradient} text-white`
+                      : 'bg-white/20 text-white hover:bg-white/30'
+                  }`}
+                >
+                  {maturityData[level].label}
+                </button>
+              ))}
+            </div>
+
+            <Button 
+              className="w-full bg-white text-black hover:bg-gray-100"
+              onClick={closeARView}
+            >
+              Cerrar Vista AR
+            </Button>
+          </div>
+
+          {/* Instructions */}
+          <div className="absolute top-4 inset-x-4 text-center">
+            <p className="text-white/80 text-sm bg-black/50 rounded-full px-4 py-2 inline-block backdrop-blur-sm">
+              {cameraStream ? 'Mueve tu dispositivo para ver el limón sobre superficies' : 'Proyección AR del limón'}
+            </p>
           </div>
         </div>
       )}
