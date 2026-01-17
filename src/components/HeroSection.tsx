@@ -48,7 +48,7 @@ const HeroSection = () => {
           <div className="flex flex-col sm:flex-row gap-4 mb-16 animate-slide-up" style={{ animationDelay: '0.2s' }}>
             <Button variant="hero" size="xl" asChild>
               <a href="#contacto">
-                Solicitar Cotización
+                Solicitar información
               </a>
             </Button>
             <Button variant="outline" size="xl" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" asChild>
