@@ -30,8 +30,8 @@ const ContactSection = () => {
     {
       icon: Phone,
       title: 'Teléfono',
-      value: '+52 (452) 123-4567',
-      href: 'tel:+524521234567',
+      value: '+52 (425) 115-2205',
+      href: 'tel:+524251152205',
     },
     {
       icon: Mail,
@@ -192,7 +192,7 @@ const ContactSection = () => {
             {/* WhatsApp CTA */}
             <Button variant="whatsapp" size="xl" className="w-full" asChild>
               <a
-                href="https://wa.me/524521234567?text=Hola,%20me%20interesa%20solicitar%20información%20sobre%20limón%20mexicano"
+                href="https://wa.me/524251152205?text=Hola,%20me%20interesa%20solicitar%20información%20sobre%20limón%20mexicano"
                 target="_blank"
                 rel="noopener noreferrer"
               >
