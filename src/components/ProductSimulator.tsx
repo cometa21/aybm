@@ -11,7 +11,6 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // --- 1. SOLUCIÓN DE TIPOS PARA MODEL-VIEWER ---
-// Esto evita que TypeScript marque error en el componente <model-viewer>
 declare global {
   namespace JSX {
     interface IntrinsicElements {
@@ -60,15 +59,14 @@ interface ProductSimulatorProps {
 
 type ProductType = 'lime' | 'masterbox';
 
-// --- 2. RUTAS DE MODELOS (AJUSTADAS PARA TU ARCHIVO ACTUAL) ---
-// He apuntado todo a '/limon.glb' para que funcione YA.
-// Cuando tengas los modelos específicos, cambia las rutas aquí.
+// --- 2. CONFIGURACIÓN DEL MODELO ---
+// IMPORTANTE: Asegúrate de que "lime-dark-green.glb" esté en la carpeta /public
 const DEFAULT_MODEL = '/lime-dark-green.glb'; 
 
 const LIME_MODELS = {
-  darkGreen: DEFAULT_MODEL,   // Antes: '/models/lime-dark-green.glb'
-  mediumGreen: DEFAULT_MODEL, // Antes: '/models/lime-medium-green.glb'
-  yellow: DEFAULT_MODEL,      // Antes: '/models/lime-yellow.glb'
+  darkGreen: DEFAULT_MODEL,   
+  mediumGreen: DEFAULT_MODEL, 
+  yellow: DEFAULT_MODEL,      
 };
 
 const getCalibreModel = (calibre: string): string => {
@@ -86,7 +84,7 @@ const getCalibreModel = (calibre: string): string => {
   }
 };
 
-const MASTERBOX_MODEL = DEFAULT_MODEL; // Placeholder temporal
+const MASTERBOX_MODEL = DEFAULT_MODEL; 
 
 const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: ProductSimulatorProps) => {
   const [productType, setProductType] = useState<ProductType>('lime');
@@ -99,7 +97,6 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
 
   useEffect(() => {
     const loadModelViewer = async () => {
-      // Chequeo seguro para evitar doble carga o errores en SSR
       if (typeof window !== 'undefined' && !customElements.get('model-viewer')) {
         try {
           await import('@google/model-viewer');
@@ -122,26 +119,30 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
 
     const handleLoad = () => {
       setIsLoaded(true);
-      console.log('Modelo cargado correctamente');
+      console.log('Modelo cargado correctamente desde:', modelViewer.getAttribute('src'));
     };
 
     modelViewer.addEventListener('load', handleLoad);
     
+    // Configuración inicial de cámara forzada al montar
+    const viewerAny = modelViewer as any;
+    if(viewerAny.cameraOrbit) {
+        viewerAny.cameraOrbit = '0deg 75deg 105%';
+    }
+
     return () => {
       modelViewer.removeEventListener('load', handleLoad);
     };
-  }, [productType, modelViewerReady, currentCalibre]); // Añadido currentCalibre para recargar si cambia
+  }, [productType, modelViewerReady, currentCalibre]);
 
   useEffect(() => {
     setIsLoaded(false);
   }, [productType, selectedCalibre]);
 
-  // --- 3. FIX DE TIPADO PARA RESET CAMERA ---
   const resetCamera = () => {
-    // Casting específico para acceder a propiedades del componente web
     const modelViewer = modelViewerRef.current as (HTMLElement & { cameraOrbit: string; fieldOfView: string });
     if (modelViewer) {
-      modelViewer.cameraOrbit = '0deg 75deg 105%'; // Un ángulo inicial estándar
+      modelViewer.cameraOrbit = '0deg 75deg 105%';
       modelViewer.fieldOfView = 'auto';
     }
   };
@@ -242,7 +243,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
             <model-viewer
               ref={modelViewerRef}
               src={currentModelUrl}
-              poster="/placeholder.svg" // Recomendado: Cambiar por una imagen real del limón (webp)
+              poster="/placeholder.svg" 
               alt={productType === 'lime' 
                 ? `Limón Mexicano Calibre ${currentCalibre.size}` 
                 : 'Caja Master JBM Cítricos'
@@ -262,7 +263,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
               environment-image="neutral"
               interaction-prompt={isMobile ? "none" : "auto"}
               interaction-prompt-style="wiggle"
-              loading="eager" // Carga prioritaria
+              loading="eager" 
               style={{
                 width: '100%',
                 height: '100%',
