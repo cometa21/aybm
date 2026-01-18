@@ -29,19 +29,30 @@ interface ProductSimulatorProps {
 
 type ProductType = 'lime' | 'masterbox';
 
-// Placeholder GLB URLs - Replace with actual 3D models
-const MODEL_URLS = {
-  lime: {
-    glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
-    usdz: '',
-    poster: '/placeholder.svg',
-  },
-  masterbox: {
-    glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
-    usdz: '',
-    poster: '/placeholder.svg',
+// Real 3D model URLs based on lime color/ripeness
+const LIME_MODELS = {
+  darkGreen: '/models/lime-dark-green.glb',    // Calibres 150, 175 (más pequeños, más verdes)
+  mediumGreen: '/models/lime-medium-green.glb', // Calibres 110, 230
+  yellow: '/models/lime-yellow.glb',            // Calibres 200, 250 (más maduros)
+};
+
+// Map calibres to their appropriate color model
+const getCalibreModel = (calibre: string): string => {
+  switch (calibre) {
+    case '150':
+    case '175':
+      return LIME_MODELS.darkGreen;
+    case '110':
+    case '230':
+      return LIME_MODELS.mediumGreen;
+    case '200':
+    case '250':
+    default:
+      return LIME_MODELS.yellow;
   }
 };
+
+const MASTERBOX_MODEL = '/models/lime-medium-green.glb'; // Placeholder hasta tener modelo de caja
 
 const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: ProductSimulatorProps) => {
   const [productType, setProductType] = useState<ProductType>('lime');
@@ -101,10 +112,10 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
     }
   };
 
-  // Get current model configuration
-  const currentModel = MODEL_URLS[productType];
-
-  // Calculate scale hint based on calibre
+  // Get current model URL based on product type and calibre
+  const currentModelUrl = productType === 'lime' 
+    ? getCalibreModel(selectedCalibre) 
+    : MASTERBOX_MODEL;
   const scaleHint = productType === 'lime' 
     ? `Calibre ${currentCalibre.size} • Ø ${currentCalibre.diameterMm}mm`
     : 'Caja Master 40 lbs • 18.14 kg';
@@ -196,9 +207,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
           {modelViewerReady && (
             <model-viewer
               ref={modelViewerRef}
-              src={currentModel.glb}
-              ios-src={currentModel.usdz || undefined}
-              poster={currentModel.poster}
+              src={currentModelUrl}
               alt={productType === 'lime' 
                 ? `Limón Mexicano Calibre ${currentCalibre.size}` 
                 : 'Caja Master JBM Cítricos'
@@ -214,14 +223,13 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
               rotation-per-second="30deg"
               shadow-intensity="1"
               shadow-softness="0.8"
-              exposure="1"
+              exposure="1.2"
               environment-image="neutral"
               interaction-prompt={isMobile ? "none" : "auto"}
               interaction-prompt-style="wiggle"
               style={{
                 width: '100%',
                 height: '100%',
-                '--poster-color': 'transparent',
               } as React.CSSProperties}
               className="w-full h-full"
             >
@@ -294,14 +302,6 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
             </div>
           </div>
         )}
-
-        {/* Note about 3D models */}
-        <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
-          <p className="text-xs text-amber-700">
-            <strong>Nota:</strong> Los modelos 3D mostrados son placeholders. Para una experiencia fotorrealista, 
-            se requieren modelos GLB/USDZ personalizados del limón con texturas de poro realistas y materiales PBR.
-          </p>
-        </div>
       </div>
     </div>
   );
