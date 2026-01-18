@@ -1,19 +1,14 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
-  Maximize2, 
-  Camera, 
-  Ruler, 
+  Box, 
+  Smartphone,
+  RotateCcw,
+  ZoomIn,
   Hand,
   Info,
-  Smartphone,
-  Move,
-  Download,
-  Check,
-  Share2,
-  ZoomIn
+  Package
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import limeSingle from '@/assets/lime-single.png';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CalibreData {
   calibre: string;
@@ -32,405 +27,87 @@ interface ProductSimulatorProps {
   onCalibreChange: (calibre: string) => void;
 }
 
-type MaturityLevel = 'verde' | 'alimonado' | 'amarillo';
+type ProductType = 'lime' | 'masterbox';
 
-const maturityData: Record<MaturityLevel, { 
-  label: string; 
-  shelfLife: string; 
-  hueRotate: string; 
-  bgGradient: string;
-  textColor: string;
-}> = {
-  verde: {
-    label: 'Verde',
-    shelfLife: '15-25 días',
-    hueRotate: 'hue-rotate(0deg)',
-    bgGradient: 'from-lime-500 to-lime-600',
-    textColor: 'text-lime-700',
+// Placeholder GLB URLs - Replace with actual 3D models
+const MODEL_URLS = {
+  lime: {
+    glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
+    usdz: '',
+    poster: '/placeholder.svg',
   },
-  alimonado: {
-    label: 'Alimonado',
-    shelfLife: '10-12 días',
-    hueRotate: 'hue-rotate(25deg) saturate(1.2)',
-    bgGradient: 'from-lime-400 to-citrus-400',
-    textColor: 'text-citrus-600',
-  },
-  amarillo: {
-    label: 'Amarillo',
-    shelfLife: '5-7 días',
-    hueRotate: 'hue-rotate(45deg) saturate(1.3)',
-    bgGradient: 'from-citrus-400 to-gold-400',
-    textColor: 'text-gold-500',
-  },
+  masterbox: {
+    glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
+    usdz: '',
+    poster: '/placeholder.svg',
+  }
 };
 
 const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: ProductSimulatorProps) => {
-  const [maturity, setMaturity] = useState<MaturityLevel>('verde');
-  const [showRealSize, setShowRealSize] = useState(false);
-  const [showARView, setShowARView] = useState(false);
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [productType, setProductType] = useState<ProductType>('lime');
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [modelViewerReady, setModelViewerReady] = useState(false);
+  const modelViewerRef = useRef<HTMLElement>(null);
+  const isMobile = useIsMobile();
   
-  // Draggable lime position state
-  const [limePosition, setLimePosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [screenshotTaken, setScreenshotTaken] = useState(false);
-  
-  // Pinch-to-zoom state
-  const [limeScale, setLimeScale] = useState(1);
-  const [isPinching, setIsPinching] = useState(false);
-  const [initialPinchDistance, setInitialPinchDistance] = useState(0);
-  const [initialScale, setInitialScale] = useState(1);
-  
-  // Screenshot blob for sharing
-  const [screenshotBlob, setScreenshotBlob] = useState<Blob | null>(null);
-  const [showShareMenu, setShowShareMenu] = useState(false);
-  
-  // Refs for AR elements
-  const arContainerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const limeRef = useRef<HTMLDivElement>(null);
-
   const currentCalibre = calibres.find(c => c.calibre === selectedCalibre) || calibres[0];
-  const maturityInfo = maturityData[maturity];
 
-  // Reset lime position and scale when AR view opens
+  // Dynamically load model-viewer
   useEffect(() => {
-    if (showARView) {
-      setLimePosition({ x: 0, y: 0 });
-      setLimeScale(1);
-      setShowShareMenu(false);
-      setScreenshotBlob(null);
-    }
-  }, [showARView]);
-
-  // Cleanup camera stream on unmount
-  useEffect(() => {
-    return () => {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
+    const loadModelViewer = async () => {
+      if (typeof window !== 'undefined' && !customElements.get('model-viewer')) {
+        try {
+          await import('@google/model-viewer');
+          setModelViewerReady(true);
+        } catch (error) {
+          console.error('Failed to load model-viewer:', error);
+        }
+      } else {
+        setModelViewerReady(true);
       }
     };
-  }, [cameraStream]);
-
-  // Handle drag start (mouse and touch)
-  const handleDragStart = useCallback((clientX: number, clientY: number) => {
-    if (!limeRef.current) return;
-    
-    const rect = limeRef.current.getBoundingClientRect();
-    setDragOffset({
-      x: clientX - rect.left - rect.width / 2,
-      y: clientY - rect.top - rect.height / 2
-    });
-    setIsDragging(true);
+    loadModelViewer();
   }, []);
 
-  // Handle drag move
-  const handleDragMove = useCallback((clientX: number, clientY: number) => {
-    if (!isDragging || !arContainerRef.current) return;
-    
-    const containerRect = arContainerRef.current.getBoundingClientRect();
-    const newX = clientX - containerRect.left - containerRect.width / 2 - dragOffset.x;
-    const newY = clientY - containerRect.top - containerRect.height / 2 - dragOffset.y;
-    
-    setLimePosition({ x: newX, y: newY });
-  }, [isDragging, dragOffset]);
-
-  // Handle drag end
-  const handleDragEnd = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  // Mouse event handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    handleDragStart(e.clientX, e.clientY);
-  };
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    handleDragMove(e.clientX, e.clientY);
-  }, [handleDragMove]);
-
-  const handleMouseUp = useCallback(() => {
-    handleDragEnd();
-  }, [handleDragEnd]);
-
-  // Calculate distance between two touch points
-  const getTouchDistance = (touches: React.TouchList | TouchList) => {
-    if (touches.length < 2) return 0;
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  // Touch event handlers with pinch-to-zoom
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      // Start pinch-to-zoom
-      e.preventDefault();
-      setIsPinching(true);
-      setIsDragging(false);
-      setInitialPinchDistance(getTouchDistance(e.touches as unknown as TouchList));
-      setInitialScale(limeScale);
-    } else if (e.touches.length === 1 && !isPinching) {
-      const touch = e.touches[0];
-      handleDragStart(touch.clientX, touch.clientY);
-    }
-  };
-
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (e.touches.length === 2 && isPinching) {
-      // Pinch-to-zoom
-      e.preventDefault();
-      const currentDistance = getTouchDistance(e.touches);
-      const scaleFactor = currentDistance / initialPinchDistance;
-      const newScale = Math.min(Math.max(initialScale * scaleFactor, 0.3), 3);
-      setLimeScale(newScale);
-    } else if (e.touches.length === 1 && !isPinching) {
-      const touch = e.touches[0];
-      handleDragMove(touch.clientX, touch.clientY);
-    }
-  }, [handleDragMove, isPinching, initialPinchDistance, initialScale]);
-
-  const handleTouchEnd = useCallback((e: TouchEvent) => {
-    if (e.touches.length < 2) {
-      setIsPinching(false);
-    }
-    if (e.touches.length === 0) {
-      handleDragEnd();
-    }
-  }, [handleDragEnd]);
-
-  // Add/remove global event listeners for dragging
+  // Handle model load
   useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      window.addEventListener('touchmove', handleTouchMove, { passive: false });
-      window.addEventListener('touchend', handleTouchEnd);
-    }
+    if (!modelViewerReady) return;
+    
+    const modelViewer = modelViewerRef.current;
+    if (!modelViewer) return;
 
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
+    const handleLoad = () => {
+      setIsLoaded(true);
     };
-  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
-  // Screenshot function - now stores blob for sharing
-  const captureScreenshot = async (downloadImmediately: boolean = true) => {
-    if (!arContainerRef.current) return;
-
-    try {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      const containerRect = arContainerRef.current.getBoundingClientRect();
-      canvas.width = containerRect.width;
-      canvas.height = containerRect.height;
-
-      // Draw video frame if available
-      if (videoRef.current && cameraStream) {
-        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-      } else {
-        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-        gradient.addColorStop(0, '#1a1a2e');
-        gradient.addColorStop(1, '#16213e');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-
-      // Draw lime image with current scale
-      const limeImg = new Image();
-      limeImg.crossOrigin = 'anonymous';
-      
-      await new Promise<void>((resolve, reject) => {
-        limeImg.onload = () => resolve();
-        limeImg.onerror = reject;
-        limeImg.src = limeSingle;
-      });
-
-      const baseSize = Math.max(currentCalibre.diameterMm * 2.5, 100);
-      const limeSize = baseSize * limeScale;
-      const limeCenterX = canvas.width / 2 + limePosition.x;
-      const limeCenterY = canvas.height / 2 + limePosition.y;
-      
-      ctx.save();
-      
-      if (maturity === 'alimonado') {
-        ctx.filter = 'hue-rotate(25deg) saturate(1.2)';
-      } else if (maturity === 'amarillo') {
-        ctx.filter = 'hue-rotate(45deg) saturate(1.3)';
-      }
-      
-      ctx.drawImage(
-        limeImg, 
-        limeCenterX - limeSize / 2, 
-        limeCenterY - limeSize / 2, 
-        limeSize, 
-        limeSize
-      );
-      ctx.restore();
-
-      // Add text overlay
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.font = 'bold 16px system-ui';
-      ctx.textAlign = 'center';
-      ctx.fillText(
-        `JBM Cítricos • Calibre ${currentCalibre.size} • ${currentCalibre.diameterMm}mm`,
-        canvas.width / 2,
-        canvas.height - 80
-      );
-
-      // Convert to blob
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        
-        setScreenshotBlob(blob);
-        
-        if (downloadImmediately) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `JBM-Limon-Calibre-${currentCalibre.size}-AR.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        }
-
-        setScreenshotTaken(true);
-        setTimeout(() => setScreenshotTaken(false), 2000);
-      }, 'image/png', 0.95);
-
-    } catch (error) {
-      console.error('Screenshot error:', error);
-    }
-  };
-
-  // Share functionality
-  const handleShare = async () => {
-    // First capture screenshot if not already captured
-    if (!screenshotBlob) {
-      await captureScreenshot(false);
-    }
-    setShowShareMenu(true);
-  };
-
-  const shareToWhatsApp = () => {
-    const message = encodeURIComponent(
-      `¡Mira este Limón Mexicano Calibre ${currentCalibre.size} (${currentCalibre.diameterMm}mm) de JBM Cítricos! 🍋\n\nVisita: https://jbmcitricos.com`
-    );
-    window.open(`https://wa.me/?text=${message}`, '_blank');
-    setShowShareMenu(false);
-  };
-
-  const shareToFacebook = () => {
-    const url = encodeURIComponent('https://jbmcitricos.com');
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
-    setShowShareMenu(false);
-  };
-
-  const shareToTwitter = () => {
-    const text = encodeURIComponent(
-      `¡Descubre el Limón Mexicano Calibre ${currentCalibre.size} de JBM Cítricos! 🍋`
-    );
-    const url = encodeURIComponent('https://jbmcitricos.com');
-    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
-    setShowShareMenu(false);
-  };
-
-  const shareNative = async () => {
-    if (!screenshotBlob) {
-      await captureScreenshot(false);
-    }
+    modelViewer.addEventListener('load', handleLoad);
     
-    if (navigator.share && screenshotBlob) {
-      try {
-        const file = new File([screenshotBlob], `JBM-Limon-Calibre-${currentCalibre.size}-AR.png`, { type: 'image/png' });
-        await navigator.share({
-          title: `Limón Mexicano Calibre ${currentCalibre.size}`,
-          text: `¡Mira este Limón Mexicano de JBM Cítricos! Calibre ${currentCalibre.size} (${currentCalibre.diameterMm}mm) 🍋`,
-          files: [file],
-        });
-      } catch (error) {
-        console.log('Share cancelled or failed:', error);
-      }
-    } else if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Limón Mexicano Calibre ${currentCalibre.size}`,
-          text: `¡Mira este Limón Mexicano de JBM Cítricos! Calibre ${currentCalibre.size} (${currentCalibre.diameterMm}mm) 🍋`,
-          url: 'https://jbmcitricos.com',
-        });
-      } catch (error) {
-        console.log('Share cancelled or failed:', error);
-      }
-    }
-    setShowShareMenu(false);
-  };
+    return () => {
+      modelViewer.removeEventListener('load', handleLoad);
+    };
+  }, [productType, modelViewerReady]);
 
-  const handleARView = async () => {
-    setCameraError(null);
-    
-    // Check if camera is available
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setCameraError('Tu navegador no soporta acceso a la cámara. Prueba con Chrome o Safari.');
-      setShowARView(true);
-      return;
-    }
+  // Reset loaded state when product type changes
+  useEffect(() => {
+    setIsLoaded(false);
+  }, [productType]);
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'environment', // Use back camera
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      });
-      setCameraStream(stream);
-      setShowARView(true);
-    } catch (error: any) {
-      console.error('Camera error:', error);
-      if (error.name === 'NotAllowedError') {
-        setCameraError('Permiso de cámara denegado. Por favor, permite el acceso a la cámara en tu navegador.');
-      } else if (error.name === 'NotFoundError') {
-        setCameraError('No se encontró una cámara en tu dispositivo.');
-      } else {
-        setCameraError('Error al acceder a la cámara. Intenta de nuevo.');
-      }
-      setShowARView(true);
+  // Reset camera position
+  const resetCamera = () => {
+    const modelViewer = modelViewerRef.current as any;
+    if (modelViewer) {
+      modelViewer.cameraOrbit = 'auto auto auto';
+      modelViewer.fieldOfView = 'auto';
     }
   };
 
-  const closeARView = () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
-    }
-    setShowARView(false);
-    setCameraError(null);
-    setLimePosition({ x: 0, y: 0 });
-  };
+  // Get current model configuration
+  const currentModel = MODEL_URLS[productType];
 
-  // Generate ruler marks - more precise
-  const rulerMarks = [];
-  for (let i = 0; i <= 50; i += 5) {
-    rulerMarks.push(i);
-  }
-
-  // WhatsApp message with selected calibre
-  const whatsappMessage = encodeURIComponent(
-    `Hola JBM Cítricos, me interesa una cotización de Limón Mexicano. Vi el Calibre ${currentCalibre.size} en su sitio web y me gustaría más información.`
-  );
-  const whatsappUrl = `https://wa.me/524531234567?text=${whatsappMessage}`;
-
-  // Calculate visual size based on calibre (base 180px for calibre 200)
-  const baseSizePx = 180;
-  const visualSize = baseSizePx * currentCalibre.scale;
+  // Calculate scale hint based on calibre
+  const scaleHint = productType === 'lime' 
+    ? `Calibre ${currentCalibre.size} • Ø ${currentCalibre.diameterMm}mm`
+    : 'Caja Master 40 lbs • 18.14 kg';
 
   return (
     <div className="relative">
@@ -440,489 +117,192 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
         <div className="flex items-center justify-between mb-6">
           <div>
             <h4 className="font-display text-lg lg:text-xl font-bold text-foreground">
-              Visualizador de Calidad JBM
+              Visualizador 3D / AR
             </h4>
             <p className="text-sm text-muted-foreground mt-1">
-              Interactúa con la tabla para ver los tamaños
+              Explora nuestros productos en 3D
             </p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-500 to-lime-600 flex items-center justify-center shadow-soft">
-            <Ruler className="w-5 h-5 text-white" />
+            <Box className="w-5 h-5 text-white" />
           </div>
         </div>
 
-        {/* Main Visualizer Area */}
-        <div className="relative h-[320px] max-w-[320px] mx-auto mb-6">
-          {/* Background Glow - follows lime size */}
-          <div 
-            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl opacity-30 transition-all duration-500 ease-out bg-gradient-to-br ${maturityInfo.bgGradient}`}
-            style={{ 
-              width: `${visualSize * 1.5}px`,
-              height: `${visualSize * 1.5}px`,
-            }}
-          />
-
-          {/* Permanent Millimeter Ruler - Left Side */}
-          <div className="absolute left-2 top-1/2 -translate-y-1/2 h-[240px] flex flex-col justify-between items-end z-10">
-            <div className="absolute inset-y-0 right-0 w-[2px] bg-gradient-to-b from-lime-300 via-lime-500 to-lime-300 rounded-full" />
-            {rulerMarks.map((mark) => (
-              <div key={mark} className="relative flex items-center -mr-[2px]">
-                <span className="text-[9px] font-mono text-lime-700 mr-1 font-medium">{mark}</span>
-                <div className={`h-[1.5px] rounded ${mark % 10 === 0 ? 'w-4 bg-lime-700' : 'w-2 bg-lime-500'}`} />
-              </div>
-            ))}
-            <span className="text-[8px] text-muted-foreground mt-1">mm</span>
-          </div>
-
-          {/* Permanent Hand Silhouette Reference - Always visible */}
-          <div className="absolute right-2 bottom-2 w-16 h-24 opacity-20 z-10">
-            <Hand className="w-full h-full text-foreground" />
-            <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] text-muted-foreground whitespace-nowrap">Escala ref.</span>
-          </div>
-
-          {/* Lime Image with REAL Dynamic Sizing (width/height change) */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative">
-              <img 
-                src={limeSingle}
-                alt={`Limón calibre ${currentCalibre.size}`}
-                className="object-contain drop-shadow-2xl transition-all duration-300 ease-out"
-                style={{ 
-                  width: `${visualSize}px`,
-                  height: `${visualSize}px`,
-                  filter: maturityInfo.hueRotate,
-                }}
-              />
-              
-              {/* Dynamic Info Badge - Diameter */}
-              <div className="absolute -top-4 -right-4 px-3 py-2 rounded-xl bg-card/95 backdrop-blur-sm border border-lime-200 shadow-card">
-                <div className="text-center">
-                  <span className="block text-[10px] text-muted-foreground">Diámetro</span>
-                  <span className="block text-xl font-bold text-lime-700">{currentCalibre.diameterMm}mm</span>
-                </div>
-              </div>
-
-              {/* Pieces per Kg Badge */}
-              <div className="absolute -bottom-4 -left-4 px-3 py-2 rounded-xl bg-lime-600 text-white shadow-card">
-                <div className="text-center">
-                  <span className="block text-[10px] opacity-80">Piezas/Kg</span>
-                  <span className="block text-sm font-bold">{currentCalibre.piezasKg}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Use Case Badge - Top */}
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-gradient-to-r from-lime-500 to-lime-600 text-white text-sm font-medium shadow-soft whitespace-nowrap z-20">
-            {currentCalibre.uso.split(' / ')[0]}
-          </div>
-
-          {/* Calibre indicator */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-card border border-lime-200 shadow-sm">
-            <span className="text-xs font-medium text-lime-700">Calibre {currentCalibre.size}</span>
-          </div>
-        </div>
-
-        {/* Maturity Selector */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Info className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">Nivel de Maduración</span>
-          </div>
-          <div className="flex gap-2">
-            {(Object.keys(maturityData) as MaturityLevel[]).map((level) => (
-              <button
-                key={level}
-                onClick={() => setMaturity(level)}
-                className={`flex-1 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
-                  maturity === level
-                    ? `bg-gradient-to-r ${maturityData[level].bgGradient} text-white shadow-soft scale-105`
-                    : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                }`}
-              >
-                <span className="block">{maturityData[level].label}</span>
-                {maturity === level && (
-                  <span className="block text-[10px] opacity-80 mt-0.5">
-                    Vida: {maturityData[level].shelfLife}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Calibre Quick Select */}
-        <div className="mb-6">
-          <span className="text-sm font-medium text-foreground mb-3 block">Selección Rápida de Calibre</span>
-          <div className="flex gap-2 flex-wrap">
-            {calibres.map((calibre) => (
-              <button
-                key={calibre.calibre}
-                onClick={() => onCalibreChange(calibre.calibre)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-                  selectedCalibre === calibre.calibre
-                    ? 'bg-lime-600 text-white shadow-soft'
-                    : 'bg-lime-100 text-lime-700 hover:bg-lime-200'
-                }`}
-              >
-                {calibre.size}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <Button
-            variant="outline"
-            className="gap-2 border-lime-300 text-lime-700 hover:bg-lime-50"
-            onClick={() => setShowRealSize(true)}
+        {/* Product Type Selector */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setProductType('lime')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
+              productType === 'lime'
+                ? 'bg-gradient-to-r from-lime-500 to-lime-600 text-white shadow-lg shadow-lime-500/30'
+                : 'bg-lime-50 text-lime-700 hover:bg-lime-100'
+            }`}
           >
-            <Maximize2 className="w-4 h-4" />
-            <span className="text-xs sm:text-sm">Tamaño Real</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="gap-2 border-lime-300 text-lime-700 hover:bg-lime-50"
-            onClick={handleARView}
+            <span className="text-xl">🍋</span>
+            <span className="text-sm">Limón Individual</span>
+          </button>
+          <button
+            onClick={() => setProductType('masterbox')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
+              productType === 'masterbox'
+                ? 'bg-gradient-to-r from-lime-500 to-lime-600 text-white shadow-lg shadow-lime-500/30'
+                : 'bg-lime-50 text-lime-700 hover:bg-lime-100'
+            }`}
           >
-            <Camera className="w-4 h-4" />
-            <span className="text-xs sm:text-sm">Ver en AR</span>
-          </Button>
+            <Package className="w-5 h-5" />
+            <span className="text-sm">Caja Master</span>
+          </button>
         </div>
 
-        {/* WhatsApp CTA Button */}
-        <Button
-          asChild
-          className="w-full gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white font-medium"
-        >
-          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-            </svg>
-            Cotizar Calibre {currentCalibre.size}
-          </a>
-        </Button>
-
-        {/* AR Support Notice */}
-        <p className="text-[10px] text-muted-foreground text-center mt-3">
-          <Smartphone className="w-3 h-3 inline mr-1" />
-          Usa AR para proyectar el limón sobre cualquier superficie
-        </p>
-      </div>
-
-      {/* Real Size Modal */}
-      {showRealSize && (
-        <div 
-          className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setShowRealSize(false)}
-        >
-          <div className="relative max-w-md w-full" onClick={e => e.stopPropagation()}>
-            <div className="text-center mb-6">
-              <h3 className="font-display text-2xl font-bold text-foreground mb-2">
-                Tamaño Real 1:1
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Coloca una moneda de <strong>$10 MXN</strong> o un <strong>Quarter USD</strong> en la pantalla para calibrar.
-              </p>
+        {/* Calibre Selector - Only visible for lime */}
+        {productType === 'lime' && (
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Seleccionar Calibre
+            </label>
+            <div className="grid grid-cols-5 gap-2">
+              {calibres.map((cal) => (
+                <button
+                  key={cal.calibre}
+                  onClick={() => onCalibreChange(cal.calibre)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    selectedCalibre === cal.calibre
+                      ? 'bg-lime-600 text-white shadow-md'
+                      : 'bg-lime-50 text-lime-700 hover:bg-lime-100'
+                  }`}
+                >
+                  {cal.size}
+                </button>
+              ))}
             </div>
-
-            {/* Actual Size Lime Display */}
-            <div className="relative mx-auto" style={{ width: `${currentCalibre.diameterMm}mm`, height: `${currentCalibre.diameterMm}mm`, minWidth: '80px', minHeight: '80px' }}>
-              <img 
-                src={limeSingle}
-                alt={`Limón calibre ${currentCalibre.size} tamaño real`}
-                className="w-full h-full object-contain"
-                style={{ filter: maturityInfo.hueRotate }}
-              />
-              {/* Diameter indicator */}
-              <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                <span className="text-lg font-bold text-lime-700">{currentCalibre.diameterMm}mm</span>
-              </div>
-            </div>
-
-            {/* Coin Reference */}
-            <div className="mt-16 flex justify-center gap-8">
-              <div className="text-center">
-                <div className="w-[28mm] h-[28mm] rounded-full border-2 border-dashed border-lime-400 flex items-center justify-center bg-lime-50/50">
-                  <span className="text-xs text-lime-600 font-medium">$10 MXN<br/>28mm</span>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="w-[24.26mm] h-[24.26mm] rounded-full border-2 border-dashed border-lime-400 flex items-center justify-center bg-lime-50/50">
-                  <span className="text-xs text-lime-600 font-medium">Quarter<br/>24.3mm</span>
-                </div>
-              </div>
-            </div>
-
-            <Button 
-              className="mt-8 w-full"
-              onClick={() => setShowRealSize(false)}
-            >
-              Cerrar
-            </Button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* AR View Modal with Camera */}
-      {showARView && (
-        <div 
-          ref={arContainerRef}
-          className="fixed inset-0 z-50 bg-black flex flex-col touch-none"
-        >
-          {/* Camera Feed */}
-          {cameraStream && !cameraError ? (
-            <video
-              autoPlay
-              playsInline
-              muted
-              ref={(video) => {
-                if (video && cameraStream) {
-                  video.srcObject = cameraStream;
-                  videoRef.current = video;
-                }
-              }}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
-              <div className="text-center p-6">
-                <Camera className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                <p className="text-white text-lg mb-2">Vista AR Simulada</p>
-                <p className="text-gray-400 text-sm max-w-xs">
-                  {cameraError || 'Imagina el limón proyectado sobre tu superficie'}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* AR Overlay - Draggable & Pinch-to-Zoom Lime */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div 
-              ref={limeRef}
-              className={`relative pointer-events-auto select-none ${
-                isDragging || isPinching ? 'cursor-grabbing' : 'cursor-grab'
-              }`}
-              style={{ 
-                width: `${Math.max(currentCalibre.diameterMm * 2.5, 100) * limeScale}px`, 
-                height: `${Math.max(currentCalibre.diameterMm * 2.5, 100) * limeScale}px`,
-                transform: `translate(${limePosition.x}px, ${limePosition.y}px)`,
-                transition: isPinching || isDragging ? 'none' : 'width 0.2s, height 0.2s',
-              }}
-              onMouseDown={handleMouseDown}
-              onTouchStart={handleTouchStart}
-              draggable={false}
-            >
-              <img 
-                src={limeSingle}
-                alt={`Limón calibre ${currentCalibre.size}`}
-                className={`w-full h-full object-contain ${
-                  isDragging || isPinching ? 'drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]' : 'drop-shadow-2xl'
-                }`}
-                style={{ 
-                  filter: `${maturityInfo.hueRotate} drop-shadow(0 10px 30px rgba(0,0,0,0.5))`,
-                  transition: isPinching || isDragging ? 'none' : 'all 0.2s',
-                }}
-                draggable={false}
-              />
-              
-              {/* AR Info Badge */}
-              <div className={`absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/90 backdrop-blur-sm shadow-lg transition-opacity ${
-                isDragging || isPinching ? 'opacity-50' : 'opacity-100'
-              }`}>
-                <span className="text-sm font-bold text-lime-700">
-                  Calibre {currentCalibre.size} • {currentCalibre.diameterMm}mm
+        {/* 3D Model Viewer */}
+        <div className="relative h-[350px] rounded-2xl overflow-hidden bg-gradient-to-br from-slate-50 to-lime-50 mb-4">
+          {/* Loading Overlay */}
+          {(!isLoaded || !modelViewerReady) && (
+            <div className="absolute inset-0 flex items-center justify-center bg-lime-50/80 backdrop-blur-sm z-10">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 border-4 border-lime-200 border-t-lime-600 rounded-full animate-spin" />
+                <span className="text-sm text-muted-foreground">
+                  {!modelViewerReady ? 'Inicializando visor 3D...' : 'Cargando modelo 3D...'}
                 </span>
               </div>
-
-              {/* Drag/Zoom indicator */}
-              {!isDragging && !isPinching && (
-                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/60">
-                  <div className="flex items-center gap-2">
-                    <Move className="w-4 h-4" />
-                    <span className="text-xs">Arrastra</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ZoomIn className="w-4 h-4" />
-                    <span className="text-xs">Pellizca para zoom</span>
-                  </div>
-                </div>
-              )}
-              
-              {/* Pinching indicator */}
-              {isPinching && (
-                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-1 text-lime-400">
-                  <ZoomIn className="w-4 h-4" />
-                  <span className="text-xs font-medium">{Math.round(limeScale * 100)}%</span>
-                </div>
-              )}
             </div>
-          </div>
+          )}
 
-          {/* Share Menu Modal */}
-          {showShareMenu && (
-            <div 
-              className="absolute inset-0 z-30 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in"
-              onClick={() => setShowShareMenu(false)}
+          {/* model-viewer Web Component - Only render when ready */}
+          {modelViewerReady && (
+            <model-viewer
+              ref={modelViewerRef}
+              src={currentModel.glb}
+              ios-src={currentModel.usdz || undefined}
+              poster={currentModel.poster}
+              alt={productType === 'lime' 
+                ? `Limón Mexicano Calibre ${currentCalibre.size}` 
+                : 'Caja Master JBM Cítricos'
+              }
+              ar
+              ar-modes="webxr scene-viewer quick-look"
+              ar-scale="fixed"
+              ar-placement="floor"
+              camera-controls
+              touch-action="pan-y"
+              auto-rotate={!isMobile}
+              auto-rotate-delay={1000}
+              rotation-per-second="30deg"
+              shadow-intensity="1"
+              shadow-softness="0.8"
+              exposure="1"
+              environment-image="neutral"
+              interaction-prompt={isMobile ? "none" : "auto"}
+              interaction-prompt-style="wiggle"
+              style={{
+                width: '100%',
+                height: '100%',
+                '--poster-color': 'transparent',
+              } as React.CSSProperties}
+              className="w-full h-full"
             >
-              <div 
-                className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
+              {/* AR Button Slot - Custom AR Button for mobile */}
+              <button 
+                slot="ar-button"
+                className={`absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
+                  isMobile 
+                    ? 'bg-gradient-to-r from-lime-500 to-lime-600 text-white shadow-xl shadow-lime-500/40 scale-110 animate-pulse'
+                    : 'bg-lime-600 text-white shadow-lg hover:shadow-xl hover:scale-105'
+                }`}
               >
-                <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">
-                  Compartir Captura
-                </h3>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  {/* WhatsApp */}
-                  <button
-                    onClick={shareToWhatsApp}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#25D366] text-white font-medium hover:bg-[#128C7E] transition-colors"
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                    </svg>
-                    WhatsApp
-                  </button>
-                  
-                  {/* Facebook */}
-                  <button
-                    onClick={shareToFacebook}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#1877F2] text-white font-medium hover:bg-[#166FE5] transition-colors"
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                    </svg>
-                    Facebook
-                  </button>
-                  
-                  {/* Twitter/X */}
-                  <button
-                    onClick={shareToTwitter}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-black text-white font-medium hover:bg-gray-800 transition-colors"
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
-                    X
-                  </button>
-                  
-                  {/* Native Share (if available) */}
-                  <button
-                    onClick={shareNative}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-lime-600 text-white font-medium hover:bg-lime-700 transition-colors"
-                  >
-                    <Share2 className="w-5 h-5" />
-                    Más
-                  </button>
-                </div>
-                
-                <button
-                  onClick={() => setShowShareMenu(false)}
-                  className="w-full mt-4 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
-                >
-                  Cancelar
-                </button>
+                <Smartphone className="w-5 h-5" />
+                <span>Ver en tu Espacio</span>
+              </button>
+
+              {/* Progress Bar Slot */}
+              <div slot="progress-bar" className="absolute bottom-0 left-0 right-0 h-1 bg-lime-100">
+                <div className="h-full bg-gradient-to-r from-lime-500 to-lime-600 transition-all duration-300" />
               </div>
+            </model-viewer>
+          )}
+
+          {/* Control Buttons - Desktop */}
+          {!isMobile && modelViewerReady && (
+            <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
+              <button
+                onClick={resetCamera}
+                className="w-10 h-10 rounded-lg bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-lime-700 hover:bg-lime-50 transition-colors"
+                title="Resetear vista"
+              >
+                <RotateCcw className="w-5 h-5" />
+              </button>
             </div>
           )}
 
-          {/* Screenshot Success Overlay */}
-          {screenshotTaken && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-20 animate-fade-in">
-              <div className="bg-lime-500 text-white px-6 py-4 rounded-2xl flex items-center gap-3 shadow-2xl">
-                <Check className="w-6 h-6" />
-                <span className="font-medium">¡Captura guardada!</span>
-              </div>
-            </div>
-          )}
-
-          {/* AR Controls */}
-          <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
-            {/* Calibre Selection */}
-            <div className="flex gap-2 justify-center mb-3 flex-wrap">
-              {calibres.map((calibre) => (
-                <button
-                  key={calibre.calibre}
-                  onClick={() => onCalibreChange(calibre.calibre)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    selectedCalibre === calibre.calibre
-                      ? 'bg-lime-500 text-white'
-                      : 'bg-white/20 text-white hover:bg-white/30'
-                  }`}
-                >
-                  {calibre.size}
-                </button>
-              ))}
-            </div>
-
-            {/* Maturity Selection */}
-            <div className="flex gap-2 justify-center mb-4">
-              {(Object.keys(maturityData) as MaturityLevel[]).map((level) => (
-                <button
-                  key={level}
-                  onClick={() => setMaturity(level)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    maturity === level
-                      ? `bg-gradient-to-r ${maturityData[level].bgGradient} text-white`
-                      : 'bg-white/20 text-white hover:bg-white/30'
-                  }`}
-                >
-                  {maturityData[level].label}
-                </button>
-              ))}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-3 gap-3">
-              <Button 
-                className="bg-lime-500 hover:bg-lime-600 text-white gap-2"
-                onClick={() => captureScreenshot(true)}
-                disabled={screenshotTaken}
-              >
-                <Download className="w-4 h-4" />
-                <span className="text-sm">Guardar</span>
-              </Button>
-              <Button 
-                className="bg-[#25D366] hover:bg-[#128C7E] text-white gap-2"
-                onClick={handleShare}
-              >
-                <Share2 className="w-4 h-4" />
-                <span className="text-sm">Compartir</span>
-              </Button>
-              <Button 
-                className="bg-white text-black hover:bg-gray-100"
-                onClick={closeARView}
-              >
-                Cerrar
-              </Button>
-            </div>
-          </div>
-
-          {/* Instructions */}
-          <div className="absolute top-4 inset-x-4 text-center">
-            <p className="text-white/90 text-sm bg-black/60 rounded-full px-4 py-2 inline-flex items-center gap-2 backdrop-blur-sm">
-              {isPinching ? (
-                <>
-                  <ZoomIn className="w-4 h-4" />
-                  Ajustando tamaño: {Math.round(limeScale * 100)}%
-                </>
-              ) : isDragging ? (
-                <>
-                  <Move className="w-4 h-4" />
-                  Suelta para posicionar
-                </>
-              ) : (
-                <>
-                  <Move className="w-4 h-4" />
-                  Arrastra • Pellizca para zoom
-                </>
-              )}
-            </p>
+          {/* Product Info Badge */}
+          <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md z-20">
+            <span className="text-xs text-muted-foreground block">Producto</span>
+            <span className="text-sm font-semibold text-lime-700">{scaleHint}</span>
           </div>
         </div>
-      )}
+
+        {/* Instructions */}
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-lime-50/50 border border-lime-100">
+          <Info className="w-5 h-5 text-lime-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-muted-foreground">
+            {isMobile ? (
+              <p>
+                <strong className="text-foreground">Toca "Ver en tu Espacio"</strong> para colocar el producto en tu entorno real usando realidad aumentada.
+              </p>
+            ) : (
+              <p>
+                <strong className="text-foreground">Arrastra para rotar</strong> el modelo 3D. Usa la rueda del mouse para hacer zoom. En móvil, podrás ver el producto en tu espacio real.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Interaction Hints - Desktop */}
+        {!isMobile && (
+          <div className="flex justify-center gap-6 mt-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <Hand className="w-4 h-4" />
+              <span>Arrastra para rotar</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <ZoomIn className="w-4 h-4" />
+              <span>Scroll para zoom</span>
+            </div>
+          </div>
+        )}
+
+        {/* Note about 3D models */}
+        <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+          <p className="text-xs text-amber-700">
+            <strong>Nota:</strong> Los modelos 3D mostrados son placeholders. Para una experiencia fotorrealista, 
+            se requieren modelos GLB/USDZ personalizados del limón con texturas de poro realistas y materiales PBR.
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
