@@ -63,7 +63,7 @@ type ProductType = 'lime' | 'masterbox';
 // --- 2. RUTAS DE MODELOS (AJUSTADAS PARA TU ARCHIVO ACTUAL) ---
 // He apuntado todo a '/limon.glb' para que funcione YA.
 // Cuando tengas los modelos específicos, cambia las rutas aquí.
-const DEFAULT_MODEL = '/limon.glb'; 
+const DEFAULT_MODEL = '/lime-dark-green.glb'; 
 
 const LIME_MODELS = {
   darkGreen: DEFAULT_MODEL,   // Antes: '/models/lime-dark-green.glb'
