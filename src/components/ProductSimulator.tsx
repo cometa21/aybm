@@ -40,16 +40,7 @@ declare global {
   }
 }
 
-interface CalibreData {
-  calibre: string;
-  size: string;
-  clasificacion: string;
-  diametro: string;
-  piezasKg: string;
-  uso: string;
-  scale: number;
-  diameterMm: number;
-}
+import type { CalibreData } from './ClassificationsSection';
 
 interface ProductSimulatorProps {
   selectedCalibre: string;
@@ -71,14 +62,14 @@ const LIME_MODELS = {
 
 const getCalibreModel = (calibre: string): string => {
   switch (calibre) {
-    case '150':
-    case '175':
+    case 'SUPER':
+    case 'EXTRA':
       return LIME_MODELS.darkGreen;
-    case '110':
-    case '230':
+    case 'XXX':
+    case 'XX':
       return LIME_MODELS.mediumGreen;
-    case '200':
-    case '250':
+    case 'X':
+    case '4':
     default:
       return LIME_MODELS.yellow;
   }
@@ -152,7 +143,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
     : MASTERBOX_MODEL;
     
   const scaleHint = productType === 'lime' 
-    ? `Calibre ${currentCalibre.size} • Ø ${currentCalibre.diameterMm}mm`
+    ? `Calibre ${currentCalibre.calibre} • ${currentCalibre.descripcion}`
     : 'Caja Master 40 lbs • 18.14 kg';
 
   return (
@@ -217,7 +208,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
                       : 'bg-lime-50 text-lime-700 hover:bg-lime-100'
                   }`}
                 >
-                  {cal.size}
+                  {cal.calibre}
                 </button>
               ))}
             </div>
@@ -245,7 +236,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
               src={currentModelUrl}
               poster="/placeholder.svg" 
               alt={productType === 'lime' 
-                ? `Limón Mexicano Calibre ${currentCalibre.size}` 
+                ? `Limón Mexicano Calibre ${currentCalibre.calibre}` 
                 : 'Caja Master JBM Cítricos'
               }
               ar
