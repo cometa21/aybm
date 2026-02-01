@@ -25,70 +25,59 @@ import {
 import michoacanMap from '@/assets/michoacan-map.png';
 import ProductSimulator from './ProductSimulator';
 
-interface CalibreData {
+export interface CalibreData {
   calibre: string;
-  size: string;
-  clasificacion: string;
-  diametro: string;
-  piezasKg: string;
+  descripcion: string;
+  color: string;
   uso: string;
   scale: number;
-  diameterMm: number;
 }
 
 const ClassificationsSection = () => {
-  const [selectedCalibre, setSelectedCalibre] = useState<string>('200 (Extra Jumbo)');
+  const [selectedCalibre, setSelectedCalibre] = useState<string>('SUPER');
 
   const calibres: CalibreData[] = [
     {
-      calibre: '200 (Extra Jumbo)',
-      size: '200',
-      clasificacion: 'Extra Jumbo',
-      diametro: '> 44.0 mm',
-      piezasKg: '< 22 piezas',
-      uso: 'Garnish & Premium Food Service',
+      calibre: 'SUPER',
+      descripcion: 'Tamaño superior, máximo diámetro',
+      color: 'Verde / Alimonado / Amarillo',
+      uso: 'Premium Food Service & Garnish',
       scale: 1.0,
-      diameterMm: 46,
     },
     {
-      calibre: '300 (Extras)',
-      size: '300',
-      clasificacion: 'Extras',
-      diametro: '> 38.1 mm',
-      piezasKg: '< 26 piezas',
+      calibre: 'EXTRA',
+      descripcion: 'Tamaño extra grande',
+      color: 'Verde / Alimonado / Amarillo',
       uso: 'Restaurantes de Alta Gama',
-      scale: 0.9,
-      diameterMm: 40,
+      scale: 0.92,
     },
     {
-      calibre: '400',
-      size: '400',
-      clasificacion: 'Primera',
-      diametro: '37.1 - 39.0 mm',
-      piezasKg: '24 - 29 piezas',
-      uso: 'Retail / Supermercados',
-      scale: 0.8,
-      diameterMm: 38,
+      calibre: 'XXX',
+      descripcion: 'Tamaño grande',
+      color: 'Verde / Alimonado / Amarillo',
+      uso: 'Retail & Supermercados',
+      scale: 0.84,
     },
     {
-      calibre: '500',
-      size: '500',
-      clasificacion: 'Primera',
-      diametro: '35.1 - 37.0 mm',
-      piezasKg: '30 - 35 piezas',
+      calibre: 'XX',
+      descripcion: 'Tamaño mediano-grande',
+      color: 'Verde / Alimonado / Amarillo',
       uso: 'Consumo General',
-      scale: 0.7,
-      diameterMm: 36,
+      scale: 0.76,
     },
     {
-      calibre: '600',
-      size: '600',
-      clasificacion: 'Primera',
-      diametro: '32.0 - 35.0 mm',
-      piezasKg: '36 - 41 piezas',
+      calibre: 'X',
+      descripcion: 'Tamaño mediano',
+      color: 'Verde / Alimonado / Amarillo',
+      uso: 'Hostelería & Coctelería',
+      scale: 0.68,
+    },
+    {
+      calibre: '4',
+      descripcion: 'Tamaño estándar',
+      color: 'Verde / Alimonado',
       uso: 'Industria de Jugos',
       scale: 0.6,
-      diameterMm: 33,
     },
   ];
 
@@ -237,10 +226,10 @@ const ClassificationsSection = () => {
           <div>
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-display text-xl lg:text-2xl font-bold text-foreground">
-                Tabla de Calibres
+                Tabla de Clasificación
               </h3>
               <span className="text-sm text-muted-foreground">
-                Especificaciones USDA
+                Clasificación JBM
               </span>
             </div>
             
@@ -249,10 +238,9 @@ const ClassificationsSection = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-lime-50 hover:bg-lime-50">
-                      <TableHead className="font-semibold text-lime-900">Calibre / Size</TableHead>
-                      <TableHead className="font-semibold text-lime-900">Clasificación</TableHead>
-                      <TableHead className="font-semibold text-lime-900">Diámetro (mm)</TableHead>
-                      <TableHead className="font-semibold text-lime-900">Piezas por Kg</TableHead>
+                      <TableHead className="font-semibold text-lime-900">Calibre</TableHead>
+                      <TableHead className="font-semibold text-lime-900">Descripción</TableHead>
+                      <TableHead className="font-semibold text-lime-900">Color Disponible</TableHead>
                       <TableHead className="font-semibold text-lime-900 hidden xl:table-cell">Uso Recomendado</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -270,29 +258,38 @@ const ClassificationsSection = () => {
                       >
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
-                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                            <span className={`w-10 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                               selectedCalibre === item.calibre 
                                 ? 'bg-lime-500 text-white scale-110' 
                                 : 'bg-lime-100 text-lime-700'
                             }`}>
-                              {item.size}
+                              {item.calibre}
                             </span>
-                            <span className="hidden sm:inline">{item.calibre}</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${
-                            item.clasificacion === 'Extra Jumbo' 
-                              ? 'bg-gold-100 text-gold-700' 
-                              : item.clasificacion === 'Extras'
-                              ? 'bg-citrus-100 text-citrus-700'
-                              : 'bg-lime-100 text-lime-700'
-                          }`}>
-                            {item.clasificacion}
+                          <span className="text-sm text-foreground">
+                            {item.descripcion}
                           </span>
                         </TableCell>
-                        <TableCell className="font-mono text-sm">{item.diametro}</TableCell>
-                        <TableCell className="font-mono text-sm">{item.piezasKg}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {item.color.split(' / ').map((color) => (
+                              <span 
+                                key={color}
+                                className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
+                                  color === 'Verde' 
+                                    ? 'bg-lime-100 text-lime-700' 
+                                    : color === 'Alimonado'
+                                    ? 'bg-citrus-100 text-citrus-700'
+                                    : 'bg-gold-100 text-gold-700'
+                                }`}
+                              >
+                                {color}
+                              </span>
+                            ))}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-muted-foreground hidden xl:table-cell">{item.uso}</TableCell>
                       </TableRow>
                     ))}
@@ -307,6 +304,22 @@ const ClassificationsSection = () => {
               <p className="font-medium text-foreground mt-1">
                 {calibres.find(c => c.calibre === selectedCalibre)?.uso}
               </p>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {calibres.find(c => c.calibre === selectedCalibre)?.color.split(' / ').map((color) => (
+                  <span 
+                    key={color}
+                    className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
+                      color === 'Verde' 
+                        ? 'bg-lime-100 text-lime-700' 
+                        : color === 'Alimonado'
+                        ? 'bg-citrus-100 text-citrus-700'
+                        : 'bg-gold-100 text-gold-700'
+                    }`}
+                  >
+                    {color}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
