@@ -48,7 +48,7 @@ const ContactSection = () => {
   ];
 
   return (
-    <section id="contacto" className="py-24 lg:py-32 bg-lime-700 relative overflow-hidden">
+    <section id="contacto" aria-label="Formulario de contacto y cotización" className="py-24 lg:py-32 bg-lime-700 relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
