@@ -4,7 +4,7 @@ import heroImage from '@/assets/hero-limes.jpg';
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
+    <section aria-label="Inicio - Limón mexicano premium de exportación" className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0">
         <img

@@ -36,7 +36,7 @@ const WhyJBMSection = () => {
   ];
 
   return (
-    <section id="nosotros" className="py-24 lg:py-32 bg-background relative overflow-hidden">
+    <section id="nosotros" aria-label="Ventajas de JBM Cítricos Premium" className="py-24 lg:py-32 bg-background relative overflow-hidden">
       <div className="container mx-auto px-4">
         {/* Main Content */}
         <div className="grid lg:grid-cols-2 gap-16 items-center mb-20">
