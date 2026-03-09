@@ -184,25 +184,36 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
 
         {/* Calibre Selector */}
         {productType === 'lime' && (
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-muted-foreground mb-2">
+          <div className="mb-6 space-y-3">
+            <label className="block text-sm font-medium text-muted-foreground">
               Seleccionar Calibre
             </label>
-            <div className="grid grid-cols-5 gap-2">
-              {calibres.map((cal) => (
-                <button
-                  key={cal.calibre}
-                  onClick={() => onCalibreChange(cal.calibre)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    selectedCalibre === cal.calibre
-                      ? 'bg-lime-600 text-white shadow-md'
-                      : 'bg-lime-50 text-lime-700 hover:bg-lime-100'
-                  }`}
-                >
-                  {cal.calibre}
-                </button>
-              ))}
-            </div>
+            {(['Verde', 'Alimonado', 'Amarillo'] as const).map((cat) => {
+              const catCalibres = calibres.filter(c => c.categoria === cat);
+              if (catCalibres.length === 0) return null;
+              return (
+                <div key={cat}>
+                  <span className={`text-xs font-semibold mb-1 block ${
+                    cat === 'Verde' ? 'text-lime-600' : cat === 'Alimonado' ? 'text-yellow-600' : 'text-amber-600'
+                  }`}>{cat}</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {catCalibres.map((cal) => (
+                      <button
+                        key={cal.calibre}
+                        onClick={() => onCalibreChange(cal.calibre)}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                          selectedCalibre === cal.calibre
+                            ? 'bg-lime-600 text-white shadow-md'
+                            : 'bg-lime-50 text-lime-700 hover:bg-lime-100'
+                        }`}
+                      >
+                        {cal.calibre}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
