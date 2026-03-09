@@ -61,18 +61,9 @@ const LIME_MODELS = {
 };
 
 const getCalibreModel = (calibre: string): string => {
-  switch (calibre) {
-    case 'SUPER':
-    case 'EXTRA':
-      return LIME_MODELS.darkGreen;
-    case 'XXX':
-    case 'XX':
-      return LIME_MODELS.mediumGreen;
-    case 'X':
-    case '4':
-    default:
-      return LIME_MODELS.yellow;
-  }
+  if (calibre.startsWith('AM-')) return LIME_MODELS.yellow;
+  if (calibre.startsWith('AL-')) return LIME_MODELS.mediumGreen;
+  return LIME_MODELS.darkGreen; // Verde
 };
 
 const MASTERBOX_MODEL = DEFAULT_MODEL; 
