@@ -25,61 +25,41 @@ import {
 import michoacanMap from '@/assets/michoacan-map.png';
 import ProductSimulator from './ProductSimulator';
 
+export type ColorCategory = 'Verde' | 'Alimonado' | 'Amarillo';
+
 export interface CalibreData {
   calibre: string;
-  descripcion: string;
-  color: string;
-  uso: string;
+  categoria: ColorCategory;
+  volumen: number;
   scale: number;
 }
-
 const ClassificationsSection = () => {
-  const [selectedCalibre, setSelectedCalibre] = useState<string>('SUPER');
+  const [selectedCalibre, setSelectedCalibre] = useState<string>('V-XX');
 
   const calibres: CalibreData[] = [
-    {
-      calibre: 'SUPER',
-      descripcion: 'Tamaño superior, máximo diámetro',
-      color: 'Verde / Alimonado / Amarillo',
-      uso: 'Premium Food Service & Garnish',
-      scale: 1.0,
-    },
-    {
-      calibre: 'EXTRA',
-      descripcion: 'Tamaño extra grande',
-      color: 'Verde / Alimonado / Amarillo',
-      uso: 'Restaurantes de Alta Gama',
-      scale: 0.92,
-    },
-    {
-      calibre: 'XXX',
-      descripcion: 'Tamaño grande',
-      color: 'Verde / Alimonado / Amarillo',
-      uso: 'Retail & Supermercados',
-      scale: 0.84,
-    },
-    {
-      calibre: 'XX',
-      descripcion: 'Tamaño mediano-grande',
-      color: 'Verde / Alimonado / Amarillo',
-      uso: 'Consumo General',
-      scale: 0.76,
-    },
-    {
-      calibre: 'X',
-      descripcion: 'Tamaño mediano',
-      color: 'Verde / Alimonado / Amarillo',
-      uso: 'Hostelería & Coctelería',
-      scale: 0.68,
-    },
-    {
-      calibre: '4',
-      descripcion: 'Tamaño estándar',
-      color: 'Verde / Alimonado',
-      uso: 'Industria de Jugos',
-      scale: 0.6,
-    },
+    // Verde
+    { calibre: 'V-4', categoria: 'Verde', volumen: 1000, scale: 0.55 },
+    { calibre: 'V-5', categoria: 'Verde', volumen: 1000, scale: 0.60 },
+    { calibre: 'V-X', categoria: 'Verde', volumen: 4000, scale: 0.68 },
+    { calibre: 'V-XX', categoria: 'Verde', volumen: 6000, scale: 0.76 },
+    { calibre: 'V-XXX', categoria: 'Verde', volumen: 4000, scale: 0.84 },
+    { calibre: 'V-EXT', categoria: 'Verde', volumen: 2000, scale: 0.92 },
+    // Alimonado
+    { calibre: 'AL-4', categoria: 'Alimonado', volumen: 1000, scale: 0.55 },
+    { calibre: 'AL-5', categoria: 'Alimonado', volumen: 1000, scale: 0.60 },
+    { calibre: 'AL-X', categoria: 'Alimonado', volumen: 2000, scale: 0.68 },
+    { calibre: 'AL-XX', categoria: 'Alimonado', volumen: 2000, scale: 0.76 },
+    { calibre: 'AL-XXX', categoria: 'Alimonado', volumen: 1000, scale: 0.84 },
+    { calibre: 'AL-EXT', categoria: 'Alimonado', volumen: 1000, scale: 0.92 },
+    // Amarillo
+    { calibre: 'AM-X', categoria: 'Amarillo', volumen: 1000, scale: 0.68 },
+    { calibre: 'AM-XX', categoria: 'Amarillo', volumen: 1000, scale: 0.76 },
+    { calibre: 'AM-XXX', categoria: 'Amarillo', volumen: 1000, scale: 0.84 },
+    { calibre: 'AM-EXT', categoria: 'Amarillo', volumen: 1000, scale: 0.92 },
   ];
+
+  const categories: ColorCategory[] = ['Verde', 'Alimonado', 'Amarillo'];
+
 
   const productAttributes = [
     {
@@ -238,88 +218,70 @@ const ClassificationsSection = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-lime-50 hover:bg-lime-50">
+                      <TableHead className="font-semibold text-lime-900">Categoría</TableHead>
                       <TableHead className="font-semibold text-lime-900">Calibre</TableHead>
-                      <TableHead className="font-semibold text-lime-900">Descripción</TableHead>
-                      <TableHead className="font-semibold text-lime-900">Color Disponible</TableHead>
-                      <TableHead className="font-semibold text-lime-900 hidden xl:table-cell">Uso Recomendado</TableHead>
+                      <TableHead className="font-semibold text-lime-900 text-right">Volumen (kg)</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {calibres.map((item) => (
-                      <TableRow 
-                        key={item.calibre}
-                        className={`cursor-pointer transition-all duration-300 ${
-                          selectedCalibre === item.calibre 
-                            ? 'bg-lime-50 border-l-4 border-l-lime-500 shadow-sm' 
-                            : 'hover:bg-muted/50'
-                        }`}
-                        onClick={() => setSelectedCalibre(item.calibre)}
-                        onMouseEnter={() => setSelectedCalibre(item.calibre)}
-                      >
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <span className={`w-10 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                    {categories.map((cat) => {
+                      const catCalibres = calibres.filter(c => c.categoria === cat);
+                      return catCalibres.map((item, idx) => (
+                        <TableRow 
+                          key={item.calibre}
+                          className={`cursor-pointer transition-all duration-300 ${
+                            selectedCalibre === item.calibre 
+                              ? 'bg-lime-50 border-l-4 border-l-lime-500 shadow-sm' 
+                              : 'hover:bg-muted/50'
+                          }`}
+                          onClick={() => setSelectedCalibre(item.calibre)}
+                          onMouseEnter={() => setSelectedCalibre(item.calibre)}
+                        >
+                          {idx === 0 && (
+                            <TableCell 
+                              rowSpan={catCalibres.length} 
+                              className="font-medium align-middle"
+                            >
+                              <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                                cat === 'Verde' 
+                                  ? 'bg-lime-100 text-lime-700' 
+                                  : cat === 'Alimonado'
+                                  ? 'bg-citrus-100 text-citrus-700'
+                                  : 'bg-gold-100 text-gold-700'
+                              }`}>
+                                {cat}
+                              </span>
+                            </TableCell>
+                          )}
+                          <TableCell>
+                            <span className={`inline-block w-16 text-center py-1 rounded-lg text-xs font-bold transition-all duration-300 ${
                               selectedCalibre === item.calibre 
                                 ? 'bg-lime-500 text-white scale-110' 
                                 : 'bg-lime-100 text-lime-700'
                             }`}>
                               {item.calibre}
                             </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-foreground">
-                            {item.descripcion}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {item.color.split(' / ').map((color) => (
-                              <span 
-                                key={color}
-                                className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
-                                  color === 'Verde' 
-                                    ? 'bg-lime-100 text-lime-700' 
-                                    : color === 'Alimonado'
-                                    ? 'bg-citrus-100 text-citrus-700'
-                                    : 'bg-gold-100 text-gold-700'
-                                }`}
-                              >
-                                {color}
-                              </span>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground hidden xl:table-cell">{item.uso}</TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell className="text-right font-medium tabular-nums">
+                            {item.volumen.toLocaleString()}
+                          </TableCell>
+                        </TableRow>
+                      ));
+                    })}
                   </TableBody>
                 </Table>
               </div>
             </div>
 
-            {/* Mobile: Show selected use */}
+            {/* Mobile: selected info */}
             <div className="xl:hidden mt-4 p-4 rounded-xl bg-lime-50 border border-lime-200">
-              <span className="text-sm text-muted-foreground">Uso recomendado:</span>
+              <span className="text-sm text-muted-foreground">Calibre seleccionado:</span>
               <p className="font-medium text-foreground mt-1">
-                {calibres.find(c => c.calibre === selectedCalibre)?.uso}
+                {selectedCalibre} — {calibres.find(c => c.calibre === selectedCalibre)?.categoria}
               </p>
-              <div className="flex flex-wrap gap-1 mt-2">
-                {calibres.find(c => c.calibre === selectedCalibre)?.color.split(' / ').map((color) => (
-                  <span 
-                    key={color}
-                    className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
-                      color === 'Verde' 
-                        ? 'bg-lime-100 text-lime-700' 
-                        : color === 'Alimonado'
-                        ? 'bg-citrus-100 text-citrus-700'
-                        : 'bg-gold-100 text-gold-700'
-                    }`}
-                  >
-                    {color}
-                  </span>
-                ))}
-              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Volumen: {calibres.find(c => c.calibre === selectedCalibre)?.volumen.toLocaleString()} kg
+              </p>
             </div>
           </div>
 
