@@ -202,88 +202,103 @@ const ClassificationsSection = () => {
           </div>
         </div>
 
-        {/* Calibres Table + Product Simulator */}
+        {/* Calibres Cards + Product Simulator */}
         <div className="grid lg:grid-cols-[1fr,400px] gap-8 mb-16">
-          {/* Table Section */}
+          {/* Cards Section */}
           <div>
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-display text-xl lg:text-2xl font-bold text-foreground">
                 Tabla de Clasificación
               </h3>
-              <span className="text-sm text-muted-foreground">
-                Clasificación JBM
-              </span>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
+                Selecciona un calibre
+              </div>
             </div>
             
-            <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-lime-50 hover:bg-lime-50">
-                      <TableHead className="font-semibold text-lime-900">Categoría</TableHead>
-                      <TableHead className="font-semibold text-lime-900">Calibre</TableHead>
-                      <TableHead className="font-semibold text-lime-900 text-right">Volumen (kg)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categories.map((cat) => {
-                      const catCalibres = calibres.filter(c => c.categoria === cat);
-                      return catCalibres.map((item, idx) => (
-                        <TableRow 
-                          key={item.calibre}
-                          className={`cursor-pointer transition-all duration-300 ${
-                            selectedCalibre === item.calibre 
-                              ? 'bg-lime-50 border-l-4 border-l-lime-500 shadow-sm' 
-                              : 'hover:bg-muted/50'
-                          }`}
-                          onClick={() => setSelectedCalibre(item.calibre)}
-                          onMouseEnter={() => setSelectedCalibre(item.calibre)}
-                        >
-                          {idx === 0 && (
-                            <TableCell 
-                              rowSpan={catCalibres.length} 
-                              className="font-medium align-middle"
-                            >
-                              <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                                cat === 'Verde' 
-                                  ? 'bg-lime-100 text-lime-700' 
-                                  : cat === 'Alimonado'
-                                  ? 'bg-citrus-100 text-citrus-700'
-                                  : 'bg-gold-100 text-gold-700'
-                              }`}>
-                                {cat}
-                              </span>
-                            </TableCell>
-                          )}
-                          <TableCell>
-                            <span className={`inline-block w-16 text-center py-1 rounded-lg text-xs font-bold transition-all duration-300 ${
-                              selectedCalibre === item.calibre 
-                                ? 'bg-lime-500 text-white scale-110' 
-                                : 'bg-lime-100 text-lime-700'
+            <div className="space-y-6">
+              {categories.map((cat) => {
+                const catCalibres = calibres.filter(c => c.categoria === cat);
+                const maxVolumen = Math.max(...calibres.map(c => c.volumen));
+                const catColors = cat === 'Verde' 
+                  ? { bg: 'bg-lime-50', border: 'border-lime-200', badge: 'bg-lime-100 text-lime-700', bar: 'bg-gradient-to-r from-lime-400 to-lime-600', activeBg: 'bg-lime-100', activeRing: 'ring-lime-500', dot: 'bg-lime-500' }
+                  : cat === 'Alimonado'
+                  ? { bg: 'bg-citrus-50', border: 'border-citrus-200', badge: 'bg-citrus-100 text-citrus-500', bar: 'bg-gradient-to-r from-citrus-300 to-citrus-500', activeBg: 'bg-citrus-50', activeRing: 'ring-citrus-400', dot: 'bg-citrus-400' }
+                  : { bg: 'bg-gold-400/10', border: 'border-gold-400/30', badge: 'bg-gold-400/20 text-gold-500', bar: 'bg-gradient-to-r from-gold-400 to-gold-500', activeBg: 'bg-gold-400/10', activeRing: 'ring-gold-400', dot: 'bg-gold-400' };
+
+                return (
+                  <div key={cat} className={`rounded-2xl border ${catColors.border} ${catColors.bg} overflow-hidden transition-all duration-300`}>
+                    {/* Category Header */}
+                    <div className="px-5 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className={`w-3 h-3 rounded-full ${catColors.dot}`} />
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${catColors.badge}`}>
+                          {cat}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {catCalibres.length} calibres
+                        </span>
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {catCalibres.reduce((sum, c) => sum + c.volumen, 0).toLocaleString()} kg total
+                      </span>
+                    </div>
+
+                    {/* Calibre Items */}
+                    <div className="px-3 pb-3 space-y-1.5">
+                      {catCalibres.map((item) => {
+                        const isSelected = selectedCalibre === item.calibre;
+                        const barWidth = (item.volumen / maxVolumen) * 100;
+                        
+                        return (
+                          <button
+                            key={item.calibre}
+                            onClick={() => setSelectedCalibre(item.calibre)}
+                            onMouseEnter={() => setSelectedCalibre(item.calibre)}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-left group ${
+                              isSelected 
+                                ? `bg-card shadow-md ring-2 ${catColors.activeRing} scale-[1.01]` 
+                                : 'bg-card/60 hover:bg-card hover:shadow-sm'
+                            }`}
+                          >
+                            {/* Calibre Badge */}
+                            <span className={`inline-flex items-center justify-center w-16 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 flex-shrink-0 ${
+                              isSelected 
+                                ? `${catColors.bar} text-white shadow-sm` 
+                                : 'bg-muted text-muted-foreground group-hover:bg-lime-100 group-hover:text-lime-700'
                             }`}>
                               {item.calibre}
                             </span>
-                          </TableCell>
-                          <TableCell className="text-right font-medium tabular-nums">
-                            {item.volumen.toLocaleString()}
-                          </TableCell>
-                        </TableRow>
-                      ));
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
 
-            {/* Mobile: selected info */}
-            <div className="xl:hidden mt-4 p-4 rounded-xl bg-lime-50 border border-lime-200">
-              <span className="text-sm text-muted-foreground">Calibre seleccionado:</span>
-              <p className="font-medium text-foreground mt-1">
-                {selectedCalibre} — {calibres.find(c => c.calibre === selectedCalibre)?.categoria}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Volumen: {calibres.find(c => c.calibre === selectedCalibre)?.volumen.toLocaleString()} kg
-              </p>
+                            {/* Volume Bar */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className={`text-xs transition-colors duration-200 ${isSelected ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                                  Volumen semanal
+                                </span>
+                                <span className={`text-sm font-bold tabular-nums transition-colors duration-200 ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                  {item.volumen.toLocaleString()} kg
+                                </span>
+                              </div>
+                              <div className="h-2 w-full rounded-full bg-muted/80 overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full transition-all duration-500 ease-out ${catColors.bar} ${isSelected ? 'opacity-100' : 'opacity-40 group-hover:opacity-70'}`}
+                                  style={{ width: `${barWidth}%` }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Arrow indicator */}
+                            <ChevronRight className={`w-4 h-4 flex-shrink-0 transition-all duration-300 ${
+                              isSelected ? 'text-lime-600 translate-x-0 opacity-100' : 'text-muted-foreground -translate-x-1 opacity-0 group-hover:opacity-50 group-hover:translate-x-0'
+                            }`} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
