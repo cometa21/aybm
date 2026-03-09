@@ -59,6 +59,8 @@ const ClassificationsSection = () => {
   ];
 
   const categories: ColorCategory[] = ['Verde', 'Alimonado', 'Amarillo'];
+
+
   const productAttributes = [
     {
       icon: Sun,
