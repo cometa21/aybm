@@ -63,6 +63,8 @@ const CertificationsSection = () => {
                   src={cert.logo}
                   alt={`Certificación ${cert.name}`}
                   className="h-20 md:h-24 w-auto object-contain"
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               <h3 className="font-display text-xl font-bold text-foreground mb-3">

@@ -11,6 +11,8 @@ const HeroSection = () => {
           src={heroImage}
           alt="Limones mexicanos frescos de alta calidad"
           className="w-full h-full object-cover"
+          fetchPriority="high"
+          decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-lime-900/95 via-lime-800/80 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-lime-900/60 via-transparent to-lime-900/30" />

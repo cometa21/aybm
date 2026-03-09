@@ -47,6 +47,8 @@ const WhyJBMSection = () => {
                 src={orchardsImage}
                 alt="Huertos de limón en Michoacán, México"
                 className="w-full h-[400px] lg:h-[500px] object-cover"
+                loading="lazy"
+                decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-lime-900/60 to-transparent" />
               
