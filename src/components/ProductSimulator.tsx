@@ -101,7 +101,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
 
     const handleLoad = () => {
       setIsLoaded(true);
-      console.log('Modelo cargado correctamente desde:', modelViewer.getAttribute('src'));
+      if (import.meta.env.DEV) console.log('Modelo cargado correctamente desde:', modelViewer.getAttribute('src'));
     };
 
     modelViewer.addEventListener('load', handleLoad);
