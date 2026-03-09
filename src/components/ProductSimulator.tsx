@@ -40,7 +40,7 @@ declare global {
   }
 }
 
-import type { CalibreData } from './ClassificationsSection';
+import type { CalibreData, ColorCategory } from './ClassificationsSection';
 
 interface ProductSimulatorProps {
   selectedCalibre: string;
