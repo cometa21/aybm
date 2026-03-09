@@ -84,7 +84,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
           await import('@google/model-viewer');
           setModelViewerReady(true);
         } catch (error) {
-          console.error('Failed to load model-viewer:', error);
+          if (import.meta.env.DEV) console.error('Failed to load model-viewer:', error);
         }
       } else {
         setModelViewerReady(true);
@@ -101,7 +101,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
 
     const handleLoad = () => {
       setIsLoaded(true);
-      console.log('Modelo cargado correctamente desde:', modelViewer.getAttribute('src'));
+      if (import.meta.env.DEV) console.log('Modelo cargado correctamente desde:', modelViewer.getAttribute('src'));
     };
 
     modelViewer.addEventListener('load', handleLoad);
