@@ -25,62 +25,41 @@ import {
 import michoacanMap from '@/assets/michoacan-map.png';
 import ProductSimulator from './ProductSimulator';
 
+export type ColorCategory = 'Verde' | 'Alimonado' | 'Amarillo';
+
 export interface CalibreData {
   calibre: string;
-  descripcion: string;
-  color: string;
-  uso: string;
+  categoria: ColorCategory;
+  volumen: number;
   scale: number;
 }
 
 const ClassificationsSection = () => {
-  const [selectedCalibre, setSelectedCalibre] = useState<string>('SUPER');
+  const [selectedCalibre, setSelectedCalibre] = useState<string>('V-XX');
 
   const calibres: CalibreData[] = [
-    {
-      calibre: 'SUPER',
-      descripcion: 'Tamaño superior, máximo diámetro',
-      color: 'Verde / Alimonado / Amarillo',
-      uso: 'Premium Food Service & Garnish',
-      scale: 1.0,
-    },
-    {
-      calibre: 'EXTRA',
-      descripcion: 'Tamaño extra grande',
-      color: 'Verde / Alimonado / Amarillo',
-      uso: 'Restaurantes de Alta Gama',
-      scale: 0.92,
-    },
-    {
-      calibre: 'XXX',
-      descripcion: 'Tamaño grande',
-      color: 'Verde / Alimonado / Amarillo',
-      uso: 'Retail & Supermercados',
-      scale: 0.84,
-    },
-    {
-      calibre: 'XX',
-      descripcion: 'Tamaño mediano-grande',
-      color: 'Verde / Alimonado / Amarillo',
-      uso: 'Consumo General',
-      scale: 0.76,
-    },
-    {
-      calibre: 'X',
-      descripcion: 'Tamaño mediano',
-      color: 'Verde / Alimonado / Amarillo',
-      uso: 'Hostelería & Coctelería',
-      scale: 0.68,
-    },
-    {
-      calibre: '4',
-      descripcion: 'Tamaño estándar',
-      color: 'Verde / Alimonado',
-      uso: 'Industria de Jugos',
-      scale: 0.6,
-    },
+    // Verde
+    { calibre: 'V-4', categoria: 'Verde', volumen: 1000, scale: 0.55 },
+    { calibre: 'V-5', categoria: 'Verde', volumen: 1000, scale: 0.60 },
+    { calibre: 'V-X', categoria: 'Verde', volumen: 4000, scale: 0.68 },
+    { calibre: 'V-XX', categoria: 'Verde', volumen: 6000, scale: 0.76 },
+    { calibre: 'V-XXX', categoria: 'Verde', volumen: 4000, scale: 0.84 },
+    { calibre: 'V-EXT', categoria: 'Verde', volumen: 2000, scale: 0.92 },
+    // Alimonado
+    { calibre: 'AL-4', categoria: 'Alimonado', volumen: 1000, scale: 0.55 },
+    { calibre: 'AL-5', categoria: 'Alimonado', volumen: 1000, scale: 0.60 },
+    { calibre: 'AL-X', categoria: 'Alimonado', volumen: 2000, scale: 0.68 },
+    { calibre: 'AL-XX', categoria: 'Alimonado', volumen: 2000, scale: 0.76 },
+    { calibre: 'AL-XXX', categoria: 'Alimonado', volumen: 1000, scale: 0.84 },
+    { calibre: 'AL-EXT', categoria: 'Alimonado', volumen: 1000, scale: 0.92 },
+    // Amarillo
+    { calibre: 'AM-X', categoria: 'Amarillo', volumen: 1000, scale: 0.68 },
+    { calibre: 'AM-XX', categoria: 'Amarillo', volumen: 1000, scale: 0.76 },
+    { calibre: 'AM-XXX', categoria: 'Amarillo', volumen: 1000, scale: 0.84 },
+    { calibre: 'AM-EXT', categoria: 'Amarillo', volumen: 1000, scale: 0.92 },
   ];
 
+  const categories: ColorCategory[] = ['Verde', 'Alimonado', 'Amarillo'];
   const productAttributes = [
     {
       icon: Sun,
