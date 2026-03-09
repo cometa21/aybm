@@ -283,6 +283,8 @@ const ClassificationsSection = () => {
                 Volumen: {calibres.find(c => c.calibre === selectedCalibre)?.volumen.toLocaleString()} kg
               </p>
             </div>
+          </div>
+
           {/* Product Simulator Panel */}
           <div className="lg:sticky lg:top-24 lg:self-start">
             <ProductSimulator 

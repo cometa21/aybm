@@ -134,7 +134,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
     : MASTERBOX_MODEL;
     
   const scaleHint = productType === 'lime' 
-    ? `Calibre ${currentCalibre.calibre} • ${currentCalibre.descripcion}`
+    ? `${currentCalibre.calibre} • ${currentCalibre.categoria} • ${currentCalibre.volumen.toLocaleString()} kg`
     : 'Caja Master 40 lbs • 18.14 kg';
 
   return (
