@@ -17,6 +17,10 @@ const Footer = () => {
                   src={logoJBM}
                   alt="JBM Cítricos Premium"
                   className="h-8 sm:h-9 w-auto transition-transform duration-300 group-hover:scale-105"
+                  loading="lazy"
+                  decoding="async"
+                  width={36}
+                  height={36}
                 />
               </div>
               <div>

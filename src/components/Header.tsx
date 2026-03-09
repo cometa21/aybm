@@ -38,6 +38,9 @@ const Header = () => {
             src={logoJBM} 
             alt="JBM Cítricos Premium" 
             className="h-14 sm:h-16 w-auto transition-transform duration-300 group-hover:scale-105"
+            width={64}
+            height={64}
+            decoding="async"
           />
         </a>
 

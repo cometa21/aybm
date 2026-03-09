@@ -184,6 +184,8 @@ const ClassificationsSection = () => {
                   src={michoacanMap} 
                   alt="Mapa de Michoacán - Zona de origen del limón mexicano JBM"
                   className="w-full h-auto"
+                  loading="lazy"
+                  decoding="async"
                   style={{
                     maskImage: 'radial-gradient(ellipse at center, black 50%, transparent 80%)',
                     WebkitMaskImage: 'radial-gradient(ellipse at center, black 50%, transparent 80%)',

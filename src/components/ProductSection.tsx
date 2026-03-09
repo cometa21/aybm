@@ -40,6 +40,8 @@ const ProductSection = () => {
                 src={limeSingle}
                 alt="Limón Mexicano Premium - JBM Cítricos"
                 className="relative z-10 w-full h-auto drop-shadow-2xl animate-float"
+                loading="lazy"
+                decoding="async"
               />
 
               {/* Floating Labels */}
