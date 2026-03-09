@@ -33,8 +33,7 @@ export interface CalibreData {
   volumen: number;
   scale: number;
 }
-
-
+const ClassificationsSection = () => {
   const [selectedCalibre, setSelectedCalibre] = useState<string>('V-XX');
 
   const calibres: CalibreData[] = [
