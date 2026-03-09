@@ -84,7 +84,7 @@ const ProductSimulator = ({ selectedCalibre, calibres, onCalibreChange }: Produc
           await import('@google/model-viewer');
           setModelViewerReady(true);
         } catch (error) {
-          console.error('Failed to load model-viewer:', error);
+          if (import.meta.env.DEV) console.error('Failed to load model-viewer:', error);
         }
       } else {
         setModelViewerReady(true);
