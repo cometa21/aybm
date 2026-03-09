@@ -218,91 +218,71 @@ const ClassificationsSection = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-lime-50 hover:bg-lime-50">
+                      <TableHead className="font-semibold text-lime-900">Categoría</TableHead>
                       <TableHead className="font-semibold text-lime-900">Calibre</TableHead>
-                      <TableHead className="font-semibold text-lime-900">Descripción</TableHead>
-                      <TableHead className="font-semibold text-lime-900">Color Disponible</TableHead>
-                      <TableHead className="font-semibold text-lime-900 hidden xl:table-cell">Uso Recomendado</TableHead>
+                      <TableHead className="font-semibold text-lime-900 text-right">Volumen (kg)</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {calibres.map((item) => (
-                      <TableRow 
-                        key={item.calibre}
-                        className={`cursor-pointer transition-all duration-300 ${
-                          selectedCalibre === item.calibre 
-                            ? 'bg-lime-50 border-l-4 border-l-lime-500 shadow-sm' 
-                            : 'hover:bg-muted/50'
-                        }`}
-                        onClick={() => setSelectedCalibre(item.calibre)}
-                        onMouseEnter={() => setSelectedCalibre(item.calibre)}
-                      >
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <span className={`w-10 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                    {categories.map((cat) => {
+                      const catCalibres = calibres.filter(c => c.categoria === cat);
+                      return catCalibres.map((item, idx) => (
+                        <TableRow 
+                          key={item.calibre}
+                          className={`cursor-pointer transition-all duration-300 ${
+                            selectedCalibre === item.calibre 
+                              ? 'bg-lime-50 border-l-4 border-l-lime-500 shadow-sm' 
+                              : 'hover:bg-muted/50'
+                          }`}
+                          onClick={() => setSelectedCalibre(item.calibre)}
+                          onMouseEnter={() => setSelectedCalibre(item.calibre)}
+                        >
+                          {idx === 0 && (
+                            <TableCell 
+                              rowSpan={catCalibres.length} 
+                              className="font-medium align-middle"
+                            >
+                              <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                                cat === 'Verde' 
+                                  ? 'bg-lime-100 text-lime-700' 
+                                  : cat === 'Alimonado'
+                                  ? 'bg-citrus-100 text-citrus-700'
+                                  : 'bg-gold-100 text-gold-700'
+                              }`}>
+                                {cat}
+                              </span>
+                            </TableCell>
+                          )}
+                          <TableCell>
+                            <span className={`inline-block w-16 text-center py-1 rounded-lg text-xs font-bold transition-all duration-300 ${
                               selectedCalibre === item.calibre 
                                 ? 'bg-lime-500 text-white scale-110' 
                                 : 'bg-lime-100 text-lime-700'
                             }`}>
                               {item.calibre}
                             </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-foreground">
-                            {item.descripcion}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {item.color.split(' / ').map((color) => (
-                              <span 
-                                key={color}
-                                className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
-                                  color === 'Verde' 
-                                    ? 'bg-lime-100 text-lime-700' 
-                                    : color === 'Alimonado'
-                                    ? 'bg-citrus-100 text-citrus-700'
-                                    : 'bg-gold-100 text-gold-700'
-                                }`}
-                              >
-                                {color}
-                              </span>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground hidden xl:table-cell">{item.uso}</TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell className="text-right font-medium tabular-nums">
+                            {item.volumen.toLocaleString()}
+                          </TableCell>
+                        </TableRow>
+                      ));
+                    })}
                   </TableBody>
                 </Table>
               </div>
             </div>
 
-            {/* Mobile: Show selected use */}
+            {/* Mobile: selected info */}
             <div className="xl:hidden mt-4 p-4 rounded-xl bg-lime-50 border border-lime-200">
-              <span className="text-sm text-muted-foreground">Uso recomendado:</span>
+              <span className="text-sm text-muted-foreground">Calibre seleccionado:</span>
               <p className="font-medium text-foreground mt-1">
-                {calibres.find(c => c.calibre === selectedCalibre)?.uso}
+                {selectedCalibre} — {calibres.find(c => c.calibre === selectedCalibre)?.categoria}
               </p>
-              <div className="flex flex-wrap gap-1 mt-2">
-                {calibres.find(c => c.calibre === selectedCalibre)?.color.split(' / ').map((color) => (
-                  <span 
-                    key={color}
-                    className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
-                      color === 'Verde' 
-                        ? 'bg-lime-100 text-lime-700' 
-                        : color === 'Alimonado'
-                        ? 'bg-citrus-100 text-citrus-700'
-                        : 'bg-gold-100 text-gold-700'
-                    }`}
-                  >
-                    {color}
-                  </span>
-                ))}
-              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Volumen: {calibres.find(c => c.calibre === selectedCalibre)?.volumen.toLocaleString()} kg
+              </p>
             </div>
-          </div>
-
           {/* Product Simulator Panel */}
           <div className="lg:sticky lg:top-24 lg:self-start">
             <ProductSimulator 
