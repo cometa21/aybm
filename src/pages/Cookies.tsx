@@ -8,6 +8,12 @@ const Cookies = () => {
       <Helmet>
         <title>Política de Cookies | JBM Cítricos Premium</title>
         <meta name="description" content="Política de cookies y tecnologías de seguimiento utilizadas en el sitio web de JBM Cítricos Premium." />
+        <meta name="robots" content="index, follow" />
+        <meta property="og:title" content="Política de Cookies | JBM Cítricos Premium" />
+        <meta property="og:description" content="Política de cookies y tecnologías de seguimiento utilizadas en el sitio web de JBM Cítricos Premium." />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://www.jbm.com.mx/cookies" />
+        <meta name="twitter:card" content="summary" />
         <link rel="canonical" href="https://www.jbm.com.mx/cookies" />
       </Helmet>
       <div className="min-h-screen bg-background">

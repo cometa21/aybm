@@ -6,8 +6,14 @@ const Privacidad = () => {
   return (
     <>
       <Helmet>
-        <title>Política de Privacidad | JBM Cítricos Premium</title>
+        <title>Aviso de Privacidad | JBM Cítricos Premium</title>
         <meta name="description" content="Aviso de privacidad y tratamiento de datos personales de JBM Cítricos Premium conforme a la LFPDPPP." />
+        <meta name="robots" content="index, follow" />
+        <meta property="og:title" content="Aviso de Privacidad | JBM Cítricos Premium" />
+        <meta property="og:description" content="Aviso de privacidad y tratamiento de datos personales de JBM Cítricos Premium conforme a la LFPDPPP." />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://www.jbm.com.mx/privacidad" />
+        <meta name="twitter:card" content="summary" />
         <link rel="canonical" href="https://www.jbm.com.mx/privacidad" />
       </Helmet>
       <div className="min-h-screen bg-background">
