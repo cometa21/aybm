@@ -8,6 +8,12 @@ const Terminos = () => {
       <Helmet>
         <title>Términos y Condiciones | JBM Cítricos Premium</title>
         <meta name="description" content="Términos y condiciones de uso del sitio web de JBM Cítricos Premium." />
+        <meta name="robots" content="index, follow" />
+        <meta property="og:title" content="Términos y Condiciones | JBM Cítricos Premium" />
+        <meta property="og:description" content="Términos y condiciones de uso del sitio web de JBM Cítricos Premium." />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://www.jbm.com.mx/terminos" />
+        <meta name="twitter:card" content="summary" />
         <link rel="canonical" href="https://www.jbm.com.mx/terminos" />
       </Helmet>
       <div className="min-h-screen bg-background">
